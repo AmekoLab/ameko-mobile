@@ -1,0 +1,107 @@
+# ==============================
+# OS / Misc
+# ==============================
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+Thumbs.db
+
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# ==============================
+# IDE
+# ==============================
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VSCode (tuỳ team có thể bật lại)
+.vscode/
+
+# ==============================
+# Flutter / Dart
+# ==============================
+.dart_tool/
+.packages
+.pub/
+.pub-cache/
+build/
+coverage/
+
+.flutter-plugins
+.flutter-plugins-dependencies
+.flutter-versions
+
+# Generated docs
+**/doc/api/
+
+# ==============================
+# ENV / Secrets (RẤT QUAN TRỌNG)
+# ==============================
+.env
+.env.*
+*.keystore
+*.jks
+key.properties
+
+# ==============================
+# Android
+# ==============================
+android/.gradle/
+android/app/build/
+android/local.properties
+
+# build outputs
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# ==============================
+# iOS
+# ==============================
+ios/Flutter/.last_build_id
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+
+ios/Pods/
+ios/.symlinks/
+
+ios/Runner.xcworkspace/
+ios/Runner.xcodeproj/project.xcworkspace/
+
+ios/DerivedData/
+
+# ==============================
+# MacOS
+# ==============================
+macos/Pods/
+
+# ==============================
+# Windows
+# ==============================
+windows/flutter/ephemeral/
+
+# ==============================
+# Linux
+# ==============================
+linux/flutter/ephemeral/
+
+# ==============================
+# Web
+# ==============================
+web/.dart_tool/
+
+# ==============================
+# Symbol / Obfuscation
+# ==============================
+app.*.symbols
+app.*.map.json

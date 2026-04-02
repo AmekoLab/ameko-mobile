@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Bird body -->
+  <ellipse cx="52" cy="52" rx="18" ry="13" fill="#22C55E"/>
+  <!-- Bird head -->
+  <circle cx="68" cy="44" r="9" fill="#22C55E"/>
+  <!-- Bird beak -->
+  <polygon points="77,42 85,44 77,46" fill="#F59E0B"/>
+  <!-- Bird tail -->
+  <path d="M34,52 Q25,44 22,58 Q32,54 34,52Z" fill="#1aA04A"/>
+  <!-- Wing -->
+  <path d="M52,52 Q48,38 60,36 Q58,48 52,52Z" fill="#1aA04A"/>
+  <!-- Chat bubble overlay on body -->
+  <rect x="43" y="46" width="16" height="11" rx="3" fill="white" opacity="0.9"/>
+  <circle cx="47" cy="52" r="1.5" fill="#22C55E"/>
+  <circle cx="51" cy="52" r="1.5" fill="#22C55E"/>
+  <circle cx="55" cy="52" r="1.5" fill="#22C55E"/>
+  <path d="M43,57 L40,61 L47,57Z" fill="white" opacity="0.9"/>
+  <!-- Eye -->
+  <circle cx="71" cy="42" r="2" fill="white"/>
+  <circle cx="71.5" cy="42" r="1" fill="#111827"/>
+</svg>
