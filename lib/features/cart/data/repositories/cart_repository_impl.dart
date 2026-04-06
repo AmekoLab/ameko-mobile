@@ -47,4 +47,23 @@ class CartRepositoryImpl implements CartRepository {
       rethrow;
     }
   }
+
+  @override
+  Future<void> updateCartItemQuantity(String itemId, int quantity) async {
+    try {
+      final response = await _dio.put(
+        '/api/v1/orders/cart/$itemId',
+        data: {'quantity': quantity},
+      );
+      if (response.data['success'] != true) {
+        throw Exception(response.data['message'] ?? 'Failed to update item quantity');
+      }
+    } on DioException catch (e) {
+      final message = e.response?.data['message'] ?? 'Failed to update item quantity';
+      throw Exception(message);
+    } catch (e) {
+      appLogger.e('Error updating cart quantity: $e');
+      rethrow;
+    }
+  }
 }

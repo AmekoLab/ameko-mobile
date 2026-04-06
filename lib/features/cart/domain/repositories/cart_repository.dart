@@ -7,4 +7,5 @@ abstract class CartRepository {
     required int quantity,
     bool isCustom = false,
   });
+  Future<void> updateCartItemQuantity(String itemId, int quantity);
 }

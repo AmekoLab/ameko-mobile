@@ -22,3 +22,16 @@ class AddItemToCart extends CartEvent {
   @override
   List<Object?> get props => [productId, quantity, isCustom];
 }
+
+class UpdateCartItemQuantity extends CartEvent {
+  final String itemId;
+  final int quantity;
+
+  const UpdateCartItemQuantity({
+    required this.itemId,
+    required this.quantity,
+  });
+
+  @override
+  List<Object?> get props => [itemId, quantity];
+}

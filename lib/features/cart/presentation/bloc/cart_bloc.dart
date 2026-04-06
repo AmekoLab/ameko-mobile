@@ -9,6 +9,7 @@ class CartBloc extends Bloc<CartEvent, CartState> {
   CartBloc({required this.repository}) : super(const CartState()) {
     on<FetchCart>(_onFetchCart);
     on<AddItemToCart>(_onAddItemToCart);
+    on<UpdateCartItemQuantity>(_onUpdateCartItemQuantity);
   }
 
   Future<void> _onFetchCart(FetchCart event, Emitter<CartState> emit) async {
@@ -34,6 +35,21 @@ class CartBloc extends Bloc<CartEvent, CartState> {
         message: 'Item added to cart successfully',
       ));
       // Re-fetch cart after adding
+      add(FetchCart());
+    } catch (e) {
+      emit(state.copyWith(
+        status: CartStatus.failure,
+        error: e.toString().replaceFirst('Exception: ', ''),
+      ));
+    }
+  }
+
+  Future<void> _onUpdateCartItemQuantity(UpdateCartItemQuantity event, Emitter<CartState> emit) async {
+    // We don't necessarily need a loading state for every tiny update, 
+    // but the UI can show a spinner if needed.
+    try {
+      await repository.updateCartItemQuantity(event.itemId, event.quantity);
+      // Re-fetch cart after updating
       add(FetchCart());
     } catch (e) {
       emit(state.copyWith(
