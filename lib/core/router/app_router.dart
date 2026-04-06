@@ -20,6 +20,13 @@ import 'package:ameko_app/features/order/presentation/screens/order_detail_scree
 import 'package:ameko_app/features/order/presentation/screens/order_list_screen.dart';
 import 'package:ameko_app/features/chat/presentation/bloc/chat_list_bloc.dart';
 import 'package:ameko_app/features/chat/presentation/bloc/chat_list_event.dart';
+import 'package:ameko_app/features/assembled_product/presentation/screens/assembled_product_list_screen.dart';
+import 'package:ameko_app/features/assembled_product/presentation/screens/assembled_product_detail_screen.dart';
+import 'package:ameko_app/features/assembled_product/presentation/bloc/assembled_product_list_bloc.dart';
+import 'package:ameko_app/features/assembled_product/presentation/bloc/assembled_product_list_event.dart';
+import 'package:ameko_app/features/cart/presentation/screens/cart_screen.dart';
+import 'package:ameko_app/features/cart/presentation/bloc/cart_bloc.dart';
+import 'package:ameko_app/features/cart/presentation/bloc/cart_event.dart';
 import 'package:ameko_app/injection_container.dart';
 
 class AppRouter {
@@ -37,6 +44,9 @@ class AppRouter {
   static const orderDetail = '/orders/:id';
   static const profile = '/profile';
   static const resetPassword = '/reset-password';
+  static const assembledProducts = '/assembled-products';
+  static const assembledProductDetail = '/assembled-products/:id';
+  static const cart = '/cart';
 
   static GoRouter createRouter(BuildContext context) {
     final authBloc = context.read<AuthBloc>();
@@ -118,7 +128,10 @@ class AppRouter {
           routes: [
             GoRoute(
               path: home,
-              builder: (_, __) => const HomeBodyPlaceholder(),
+              builder: (_, __) => BlocProvider(
+                create: (_) => sl<AssembledProductListBloc>(),
+                child: const AssembledProductListScreen(),
+              ),
             ),
             GoRoute(
               path: chat,
@@ -146,6 +159,27 @@ class AppRouter {
             GoRoute(
               path: profile,
               builder: (_, __) => const ProfileScreen(),
+            ),
+            GoRoute(
+              path: assembledProducts,
+              builder: (_, __) => BlocProvider(
+                create: (_) => sl<AssembledProductListBloc>()..add(FetchAssembledProducts()),
+                child: const AssembledProductListScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/assembled-products/:id',
+              builder: (_, state) {
+                final id = state.pathParameters['id'] ?? '';
+                return AssembledProductDetailScreen(productId: id);
+              },
+            ),
+            GoRoute(
+              path: cart,
+              builder: (_, __) => BlocProvider(
+                create: (_) => sl<CartBloc>()..add(FetchCart()),
+                child: const CartScreen(),
+              ),
             ),
           ],
         ),

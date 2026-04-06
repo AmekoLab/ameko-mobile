@@ -19,6 +19,13 @@ import 'package:ameko_app/features/chat/data/repositories/chat_repository_impl.d
 import 'package:ameko_app/features/chat/domain/repositories/chat_repository.dart';
 import 'package:ameko_app/features/chat/presentation/bloc/chat_list_bloc.dart';
 import 'package:ameko_app/features/chat/presentation/bloc/chat_detail_bloc.dart';
+import 'package:ameko_app/features/assembled_product/data/repositories/assembled_product_repository_impl.dart';
+import 'package:ameko_app/features/assembled_product/domain/repositories/assembled_product_repository.dart';
+import 'package:ameko_app/features/assembled_product/presentation/bloc/assembled_product_list_bloc.dart';
+import 'package:ameko_app/features/assembled_product/presentation/bloc/assembled_product_detail_bloc.dart';
+import 'package:ameko_app/features/cart/data/repositories/cart_repository_impl.dart';
+import 'package:ameko_app/features/cart/domain/repositories/cart_repository.dart';
+import 'package:ameko_app/features/cart/presentation/bloc/cart_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -98,5 +105,25 @@ Future<void> setupDependencies() async {
 
   sl.registerFactory<ChatDetailBloc>(
     () => ChatDetailBloc(repository: sl<ChatRepository>()),
+  );
+
+  sl.registerSingleton<AssembledProductRepository>(
+    AssembledProductRepositoryImpl(dio),
+  );
+
+  sl.registerFactory<AssembledProductListBloc>(
+    () => AssembledProductListBloc(repository: sl<AssembledProductRepository>()),
+  );
+
+  sl.registerFactory<AssembledProductDetailBloc>(
+    () => AssembledProductDetailBloc(repository: sl<AssembledProductRepository>()),
+  );
+
+  sl.registerSingleton<CartRepository>(
+    CartRepositoryImpl(dio),
+  );
+
+  sl.registerFactory<CartBloc>(
+    () => CartBloc(repository: sl<CartRepository>()),
   );
 }

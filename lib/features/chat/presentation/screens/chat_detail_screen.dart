@@ -11,6 +11,7 @@ import 'package:ameko_app/features/chat/presentation/bloc/chat_detail_state.dart
 import 'package:ameko_app/features/chat/presentation/bloc/chat_list_bloc.dart';
 import 'package:ameko_app/features/chat/presentation/bloc/chat_list_event.dart';
 import 'package:ameko_app/features/chat/presentation/bloc/chat_list_state.dart';
+import 'package:ameko_app/core/services/storage_service.dart';
 import 'package:ameko_app/injection_container.dart';
 
 class ChatDetailScreen extends StatefulWidget {
@@ -25,10 +26,14 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final _inputCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
   late ChatDetailBloc _bloc;
+  String _currentUserId = '';
 
   @override
   void initState() {
     super.initState();
+    final user = sl<StorageService>().getUser();
+    _currentUserId = user?['id'] ?? '';
+    
     _bloc = sl<ChatDetailBloc>()..add(FetchMessages(widget.chatId));
     context.read<ChatListBloc>().add(OptimisticMarkAsReadList(conversationId: widget.chatId));
     _scrollCtrl.addListener(_onScroll);
@@ -60,7 +65,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       conversationId: widget.chatId,
       content: text,
       tempId: '',
-      senderId: 'usr_001',
+      senderId: _currentUserId,
     ));
     _inputCtrl.clear();
     // Scroll to bottom (offset 0 in reverse list)
@@ -134,9 +139,13 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                               );
                             }
                             final msg = state.messages[i];
-                            // Using a placeholder check for "Me". In real app, compare with auth user id.
-                            final isMine = msg.senderId == 'usr_001' || msg.senderId == 'me';
-                            return _MessageBubble(message: msg, isMine: isMine);
+                            // Compare with real auth user id
+                            final isMine = msg.senderId == _currentUserId;
+                            return _MessageBubble(
+                              message: msg, 
+                              isMine: isMine, 
+                              otherUserName: convo?.otherUserName ?? '',
+                            );
                           },
                         );
                       },
@@ -192,15 +201,29 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 }
 
 class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({required this.message, required this.isMine});
+  const _MessageBubble({
+    required this.message, 
+    required this.isMine, 
+    required this.otherUserName,
+  });
+  
   final MessageEntity message;
   final bool isMine;
+  final String otherUserName;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       children: [
+        if (!isMine && otherUserName.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(left: 42, bottom: 4),
+            child: Text(
+              otherUserName, 
+              style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+            ),
+          ),
         Row(
           mainAxisAlignment: isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.end,
