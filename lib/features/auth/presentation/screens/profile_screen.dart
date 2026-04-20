@@ -6,12 +6,15 @@ import 'package:ameko_app/features/auth/presentation/bloc/auth_state.dart';
 import 'package:ameko_app/features/auth/presentation/bloc/auth_event.dart';
 import 'package:ameko_app/core/theme/app_colors.dart';
 import 'package:ameko_app/core/theme/app_text_styles.dart';
+import '../../../../l10n/app_localizations.dart';
+import 'package:ameko_app/core/bloc/locale_bloc.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
         if (state is! AuthSuccess) {
@@ -28,7 +31,7 @@ class ProfileScreen extends StatelessWidget {
             },
             child: CustomScrollView(
               slivers: [
-                _buildAppBar(context, user.fullName ?? user.username),
+                _buildAppBar(context, user.fullName ?? user.username, l10n),
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.all(24.0),
@@ -39,9 +42,9 @@ class ProfileScreen extends StatelessWidget {
                             user.email,
                             user.role ?? 'User'),
                         const SizedBox(height: 32),
-                        _buildMenuSection(context),
+                        _buildMenuSection(context, l10n),
                         const SizedBox(height: 32),
-                        _buildLogoutButton(context),
+                        _buildLogoutButton(context, l10n),
                         const SizedBox(height: 48),
                       ],
                     ),
@@ -55,13 +58,13 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAppBar(BuildContext context, String name) {
+  Widget _buildAppBar(BuildContext context, String name, AppLocalizations l10n) {
     return SliverAppBar(
       expandedHeight: 0,
       floating: true,
       backgroundColor: AppColors.background,
       elevation: 0,
-      title: Text('Profile', style: AppTextStyles.headingMedium),
+      title: Text(l10n.profile, style: AppTextStyles.headingMedium),
       centerTitle: true,
     );
   }
@@ -140,7 +143,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuSection(BuildContext context) {
+  Widget _buildMenuSection(BuildContext context, AppLocalizations l10n) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -157,25 +160,19 @@ class ProfileScreen extends StatelessWidget {
           _buildDivider(),
           _buildMenuItem(
             icon: Icons.shopping_bag_outlined,
-            title: 'My Orders',
+            title: l10n.orders,
             onTap: () {},
           ),
           _buildDivider(),
           _buildMenuItem(
-            icon: Icons.favorite_border,
-            title: 'Wishlist',
-            onTap: () {},
+            icon: Icons.language,
+            title: l10n.language,
+            onTap: () => _showLanguagePicker(context, l10n),
           ),
           _buildDivider(),
           _buildMenuItem(
             icon: Icons.notifications_none,
             title: 'Notifications',
-            onTap: () {},
-          ),
-          _buildDivider(),
-          _buildMenuItem(
-            icon: Icons.security,
-            title: 'Privacy & Security',
             onTap: () {},
           ),
           _buildDivider(),
@@ -186,6 +183,53 @@ class ProfileScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  void _showLanguagePicker(BuildContext context, AppLocalizations l10n) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(l10n.selectLanguage, style: AppTextStyles.titleMedium),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Text('🇺🇸', style: TextStyle(fontSize: 24)),
+                title: Text(l10n.english),
+                trailing: BlocBuilder<LocaleBloc, LocaleState>(
+                  builder: (context, state) => state.locale.languageCode == 'en'
+                      ? const Icon(Icons.check_circle, color: AppColors.primary)
+                      : const SizedBox.shrink(),
+                ),
+                onTap: () {
+                  context.read<LocaleBloc>().add(const ChangeLocale(Locale('en')));
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Text('🇻🇳', style: TextStyle(fontSize: 24)),
+                title: Text(l10n.vietnamese),
+                trailing: BlocBuilder<LocaleBloc, LocaleState>(
+                  builder: (context, state) => state.locale.languageCode == 'vi'
+                      ? const Icon(Icons.check_circle, color: AppColors.primary)
+                      : const SizedBox.shrink(),
+                ),
+                onTap: () {
+                  context.read<LocaleBloc>().add(const ChangeLocale(Locale('vi')));
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -207,13 +251,13 @@ class ProfileScreen extends StatelessWidget {
     return const Divider(height: 1, indent: 20, endIndent: 20, color: AppColors.border);
   }
 
-  Widget _buildLogoutButton(BuildContext context) {
+  Widget _buildLogoutButton(BuildContext context, AppLocalizations l10n) {
     return GestureDetector(
       onTap: () {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Sign Out'),
+            title: Text(l10n.signOut),
             content: const Text('Are you sure you want to sign out?'),
             actions: [
               TextButton(
@@ -226,7 +270,7 @@ class ProfileScreen extends StatelessWidget {
                   context.read<AuthBloc>().add(const LoggedOut());
                 },
                 style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: const Text('Sign Out'),
+                child: Text(l10n.signOut),
               ),
             ],
           ),
@@ -240,14 +284,14 @@ class ProfileScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.red.withOpacity(0.1)),
         ),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.logout, color: Colors.redAccent, size: 20),
-            SizedBox(width: 12),
+            const Icon(Icons.logout, color: Colors.redAccent, size: 20),
+            const SizedBox(width: 12),
             Text(
-              'Sign Out',
-              style: TextStyle(
+              l10n.signOut,
+              style: const TextStyle(
                 color: Colors.redAccent,
                 fontWeight: FontWeight.bold,
                 fontSize: 16,

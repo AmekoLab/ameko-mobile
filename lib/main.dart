@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'l10n/app_localizations.dart';
 import 'package:ameko_app/core/router/app_router.dart';
 import 'package:ameko_app/core/theme/app_theme.dart';
 import 'package:ameko_app/core/utils/app_bloc_observer.dart';
 import 'package:ameko_app/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:ameko_app/core/bloc/locale_bloc.dart';
 import 'package:ameko_app/injection_container.dart';
 
 Future<void> main() async {
@@ -27,8 +30,11 @@ class AmekoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => sl<AuthBloc>(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => sl<AuthBloc>()),
+        BlocProvider(create: (_) => sl<LocaleBloc>()..add(LoadLocale())),
+      ],
       child: const _RouterWrapper(),
     );
   }
@@ -46,11 +52,23 @@ class _RouterWrapperState extends State<_RouterWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'Ameko',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      routerConfig: router,
+    return BlocBuilder<LocaleBloc, LocaleState>(
+      builder: (context, state) {
+        return MaterialApp.router(
+          title: 'Ameko',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light,
+          routerConfig: router,
+          locale: state.locale,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+        );
+      },
     );
   }
 }

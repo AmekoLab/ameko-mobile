@@ -26,6 +26,7 @@ import 'package:ameko_app/features/assembled_product/presentation/bloc/assembled
 import 'package:ameko_app/features/cart/data/repositories/cart_repository_impl.dart';
 import 'package:ameko_app/features/cart/domain/repositories/cart_repository.dart';
 import 'package:ameko_app/features/cart/presentation/bloc/cart_bloc.dart';
+import 'package:ameko_app/core/bloc/locale_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -125,5 +126,9 @@ Future<void> setupDependencies() async {
 
   sl.registerFactory<CartBloc>(
     () => CartBloc(repository: sl<CartRepository>()),
+  );
+
+  sl.registerFactory<LocaleBloc>(
+    () => LocaleBloc(sl<StorageService>()),
   );
 }

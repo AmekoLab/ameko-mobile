@@ -93,7 +93,7 @@ class AppTextStyles {
   static TextStyle get link => GoogleFonts.poppins(
         fontSize: 14,
         fontWeight: FontWeight.w500,
-        color: AppColors.primary,
+        color: AppColors.amazonLink,
         height: 1.5,
       );
 

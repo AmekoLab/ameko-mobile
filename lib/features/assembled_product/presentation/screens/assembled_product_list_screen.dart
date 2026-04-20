@@ -3,6 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
+import 'package:ameko_app/features/assembled_product/presentation/bloc/assembled_product_list_event.dart';
+import 'package:ameko_app/features/assembled_product/presentation/bloc/assembled_product_list_state.dart';
+import '../../../../l10n/app_localizations.dart';
+import 'dart:async';
 import 'package:ameko_app/core/theme/app_colors.dart';
 import 'package:ameko_app/core/theme/app_text_styles.dart';
 import 'package:ameko_app/core/widgets/app_avatar_circle.dart';
@@ -23,6 +27,9 @@ class AssembledProductListScreen extends StatefulWidget {
 
 class _AssembledProductListScreenState extends State<AssembledProductListScreen> {
   final _scrollCtrl = ScrollController();
+  final _searchCtrl = TextEditingController();
+  Timer? _debounce;
+  bool _isSearching = false;
 
   @override
   void initState() {
@@ -34,7 +41,16 @@ class _AssembledProductListScreenState extends State<AssembledProductListScreen>
   @override
   void dispose() {
     _scrollCtrl.dispose();
+    _searchCtrl.dispose();
+    _debounce?.cancel();
     super.dispose();
+  }
+
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      context.read<AssembledProductListBloc>().add(SearchAssembledProducts(query));
+    });
   }
 
   void _onScroll() {
@@ -48,6 +64,7 @@ class _AssembledProductListScreenState extends State<AssembledProductListScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, authState) {
         final userName = authState is AuthSuccess
@@ -63,10 +80,10 @@ class _AssembledProductListScreenState extends State<AssembledProductListScreen>
             child: CustomScrollView(
               controller: _scrollCtrl,
               slivers: [
-                _buildSliverAppBar(context, userName),
-                _buildFeaturedBanner(),
-                _buildSectionHeader(),
-                _buildProductGrid(),
+                _buildSliverAppBar(context, userName, l10n),
+                _buildFeaturedBanner(l10n),
+                _buildSectionHeader(l10n),
+                _buildProductGrid(l10n),
                 _buildLoadingFooter(),
               ],
             ),
@@ -76,9 +93,9 @@ class _AssembledProductListScreenState extends State<AssembledProductListScreen>
     );
   }
 
-  Widget _buildSliverAppBar(BuildContext context, String userName) {
+  Widget _buildSliverAppBar(BuildContext context, String userName, AppLocalizations l10n) {
     return SliverAppBar(
-      expandedHeight: 130,
+      expandedHeight: _isSearching ? 130 : 100,
       floating: true,
       snap: true,
       backgroundColor: AppColors.surface,
@@ -86,52 +103,65 @@ class _AssembledProductListScreenState extends State<AssembledProductListScreen>
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
           color: AppColors.surface,
-          padding: const EdgeInsets.fromLTRB(20, 52, 20, 8),
-          child: Row(
+          padding: const EdgeInsets.fromLTRB(20, 48, 20, 8),
+          child: Column(
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('Hello 👋', style: AppTextStyles.bodySecondary),
-                    const SizedBox(height: 2),
-                    Text(userName,
-                        style: AppTextStyles.headingMedium,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
-                  ],
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('${l10n.hello} 👋', style: AppTextStyles.bodySecondary),
+                        const SizedBox(height: 2),
+                        Text(userName,
+                            style: AppTextStyles.headingMedium,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        _isSearching = !_isSearching;
+                        if (!_isSearching) {
+                          _searchCtrl.clear();
+                          context.read<AssembledProductListBloc>().add(const SearchAssembledProducts(''));
+                        }
+                      });
+                    },
+                    icon: Icon(_isSearching ? Icons.close : Icons.search, color: AppColors.textSecondary),
+                  ),
+                  IconButton(
+                    onPressed: () => context.push('/cart'),
+                    icon: const Icon(Icons.shopping_cart_outlined, color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+              if (_isSearching) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceVariant.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: TextField(
+                    controller: _searchCtrl,
+                    onChanged: _onSearchChanged,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: l10n.searchHint,
+                      hintStyle: AppTextStyles.body.copyWith(color: AppColors.textHint, fontSize: 14),
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
                 ),
-              ),
-              IconButton(
-                onPressed: () => context.push('/cart'),
-                icon: const Icon(Icons.shopping_cart_outlined, color: AppColors.textSecondary),
-              ),
-              IconButton(
-                onPressed: () => context.read<AuthBloc>().add(const LoggedOut()),
-                icon: const Icon(Icons.logout_outlined, color: AppColors.textSecondary),
-              ),
-            ],
-          ),
-        ),
-      ),
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(48),
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceVariant,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            children: [
-              const SizedBox(width: 12),
-              const Icon(Icons.search, color: AppColors.textHint, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text('Search keyboards...', style: AppTextStyles.body.copyWith(color: AppColors.textHint)),
-              ),
+              ],
             ],
           ),
         ),
@@ -139,7 +169,7 @@ class _AssembledProductListScreenState extends State<AssembledProductListScreen>
     );
   }
 
-  Widget _buildFeaturedBanner() {
+  Widget _buildFeaturedBanner(AppLocalizations l10n) {
     return SliverToBoxAdapter(
       child: Container(
         margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -196,7 +226,7 @@ class _AssembledProductListScreenState extends State<AssembledProductListScreen>
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'Discover Custom\nKeyboards',
+                    l10n.discoverKeyboards,
                     style: AppTextStyles.headingMedium.copyWith(color: Colors.white, height: 1.2),
                   ),
                   const SizedBox(height: 12),
@@ -206,7 +236,7 @@ class _AssembledProductListScreenState extends State<AssembledProductListScreen>
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Text('Explore now',
+                    child: Text(l10n.exploreNow,
                         style: AppTextStyles.label.copyWith(color: AppColors.primary, fontWeight: FontWeight.w700)),
                   ),
                 ],
@@ -218,17 +248,17 @@ class _AssembledProductListScreenState extends State<AssembledProductListScreen>
     );
   }
 
-  Widget _buildSectionHeader() {
+  Widget _buildSectionHeader(AppLocalizations l10n) {
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Featured Products', style: AppTextStyles.subheading),
+            Text(l10n.featuredProducts, style: AppTextStyles.subheading),
             TextButton(
               onPressed: () {},
-              child: Text('See all', style: AppTextStyles.link),
+              child: Text(l10n.seeAll, style: AppTextStyles.link),
             ),
           ],
         ),
@@ -236,7 +266,7 @@ class _AssembledProductListScreenState extends State<AssembledProductListScreen>
     );
   }
 
-  Widget _buildProductGrid() {
+  Widget _buildProductGrid(AppLocalizations l10n) {
     return BlocBuilder<AssembledProductListBloc, AssembledProductListState>(
       builder: (context, state) {
         if (state.status == AssembledProductListStatus.loading) {
@@ -320,7 +350,7 @@ class _ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final formatter = NumberFormat('#,###', 'vi_VN');
+    final formatter = NumberFormat('#,###', 'en_US');
 
     return GestureDetector(
       onTap: onTap,
@@ -403,12 +433,12 @@ class _ProductCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     // Shop info row
                     Row(
                       children: [
                         AppAvatarCircle(imageUrl: product.logoUrl, name: product.shopName, radius: 8),
-                        const SizedBox(width: 4),
+                        SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             product.shopName,
@@ -428,13 +458,6 @@ class _ProductCard extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    // Stock
-                    if (product.quantity > 0)
-                      Text(
-                        '${product.quantity} products left',
-                        style: AppTextStyles.caption.copyWith(fontSize: 10),
-                      ),
                   ],
                 ),
               ),

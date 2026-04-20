@@ -9,10 +9,18 @@ class AssembledProductRepositoryImpl implements AssembledProductRepository {
   AssembledProductRepositoryImpl(this._dio);
 
   @override
-  Future<AssembledProductListResponse> getAll({int currentPage = 1, int pageSize = 10}) async {
+  Future<AssembledProductListResponse> getAll({int currentPage = 1, int pageSize = 10, String? keyword}) async {
+    final Map<String, dynamic> queryParams = {
+      'currentPage': currentPage,
+      'pageSize': pageSize,
+    };
+    if (keyword != null && keyword.isNotEmpty) {
+      queryParams['keyword'] = keyword;
+    }
+
     final response = await _dio.get(
       '/api/v1/AssembledProduct',
-      queryParameters: {'currentPage': currentPage, 'pageSize': pageSize},
+      queryParameters: queryParams,
     );
     final data = response.data['data'] as Map<String, dynamic>;
     final items = (data['items'] as List<dynamic>)

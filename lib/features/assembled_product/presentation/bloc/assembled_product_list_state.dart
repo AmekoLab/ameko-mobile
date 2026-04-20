@@ -9,6 +9,7 @@ class AssembledProductListState extends Equatable {
   final int currentPage;
   final bool hasMore;
   final String? error;
+  final String? searchQuery;
 
   const AssembledProductListState({
     this.products = const [],
@@ -16,6 +17,7 @@ class AssembledProductListState extends Equatable {
     this.currentPage = 1,
     this.hasMore = true,
     this.error,
+    this.searchQuery,
   });
 
   AssembledProductListState copyWith({
@@ -24,6 +26,7 @@ class AssembledProductListState extends Equatable {
     int? currentPage,
     bool? hasMore,
     String? error,
+    String? searchQuery,
   }) {
     return AssembledProductListState(
       products: products ?? this.products,
@@ -31,9 +34,10 @@ class AssembledProductListState extends Equatable {
       currentPage: currentPage ?? this.currentPage,
       hasMore: hasMore ?? this.hasMore,
       error: error ?? this.error,
+      searchQuery: searchQuery ?? this.searchQuery,
     );
   }
 
   @override
-  List<Object?> get props => [products, status, currentPage, hasMore, error];
+  List<Object?> get props => [products, status, currentPage, hasMore, error, searchQuery];
 }

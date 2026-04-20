@@ -69,11 +69,11 @@ class _AssembledProductDetailScreenState extends State<AssembledProductDetailScr
                     children: [
                       const Icon(Icons.error_outline, size: 48, color: AppColors.error),
                       const SizedBox(height: 12),
-                      Text(state.error ?? 'Không thể tải sản phẩm', style: AppTextStyles.bodySecondary),
+                      Text(state.error ?? 'Could not load product', style: AppTextStyles.bodySecondary),
                       const SizedBox(height: 12),
                       TextButton(
                         onPressed: () => _bloc.add(FetchAssembledProductDetail(widget.productId)),
-                        child: Text('Thử lại', style: AppTextStyles.link),
+                        child: Text('Try again', style: AppTextStyles.link),
                       ),
                     ],
                   ),
@@ -96,7 +96,7 @@ class _AssembledProductDetailScreenState extends State<AssembledProductDetailScr
         .where((u) => u != null && u.isNotEmpty)
         .cast<String>()
         .toList();
-    final formatter = NumberFormat('#,###', 'vi_VN');
+    final formatter = NumberFormat('#,###', 'en_US');
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -237,7 +237,7 @@ class _AssembledProductDetailScreenState extends State<AssembledProductDetailScr
                           Row(
                             children: [
                               _buildBadge(
-                                product.quantity > 0 ? 'Còn hàng' : 'Hết hàng',
+                                product.quantity > 0 ? 'In stock' : 'Out of stock',
                                 product.quantity > 0 ? AppColors.primarySurface : AppColors.error.withValues(alpha: 0.1),
                                 product.quantity > 0 ? AppColors.primary : AppColors.error,
                               ),
@@ -247,7 +247,7 @@ class _AssembledProductDetailScreenState extends State<AssembledProductDetailScr
                           ),
                           const SizedBox(height: 8),
                           if (product.quantity > 0)
-                            Text('Số lượng còn lại: ${product.quantity}',
+                            Text('Quantity left: ${product.quantity}',
                                 style: AppTextStyles.caption),
                         ],
                       ),
@@ -272,7 +272,7 @@ class _AssembledProductDetailScreenState extends State<AssembledProductDetailScr
                               children: [
                                 Text(product.shopName,
                                     style: AppTextStyles.titleSmall),
-                                Text('Xem cửa hàng', style: AppTextStyles.link.copyWith(fontSize: 12)),
+                                Text('View Shop', style: AppTextStyles.link.copyWith(fontSize: 12)),
                               ],
                             ),
                           ),
@@ -327,7 +327,7 @@ class _AssembledProductDetailScreenState extends State<AssembledProductDetailScr
                           side: const BorderSide(color: AppColors.border),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        child: Text('Hết hàng', style: AppTextStyles.button.copyWith(color: AppColors.textHint)),
+                        child: Text('Out of stock', style: AppTextStyles.button.copyWith(color: AppColors.textHint)),
                       ),
                     )
                   : Row(
@@ -362,7 +362,7 @@ class _AssembledProductDetailScreenState extends State<AssembledProductDetailScr
                                     else
                                       const Icon(Icons.shopping_cart_outlined, color: AppColors.primary, size: 18),
                                     const SizedBox(width: 8),
-                                    Text('Thêm giỏ', style: AppTextStyles.button.copyWith(color: AppColors.primary)),
+                                    Text('Add to cart', style: AppTextStyles.button.copyWith(color: AppColors.primary)),
                                   ],
                                 ),
                               );
@@ -380,7 +380,7 @@ class _AssembledProductDetailScreenState extends State<AssembledProductDetailScr
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               elevation: 0,
                             ),
-                            child: Text('Mua ngay', style: AppTextStyles.button),
+                            child: Text('Buy now', style: AppTextStyles.button),
                           ),
                         ),
                       ],
@@ -397,8 +397,8 @@ class _AssembledProductDetailScreenState extends State<AssembledProductDetailScr
     if (product.layout != null) specs.add({'key': 'Layout', 'value': product.layout!});
     if (product.mounting != null) specs.add({'key': 'Mounting', 'value': product.mounting!});
     if (product.pcb != null) specs.add({'key': 'PCB', 'value': product.pcb!});
-    if (product.connection != null) specs.add({'key': 'Kết nối', 'value': product.connection!});
-    if (product.battery != null) specs.add({'key': 'Pin', 'value': product.battery!});
+    if (product.connection != null) specs.add({'key': 'Connection', 'value': product.connection!});
+    if (product.battery != null) specs.add({'key': 'Battery', 'value': product.battery!});
     if (specs.isEmpty) return const SizedBox.shrink();
 
     return Container(
@@ -412,7 +412,7 @@ class _AssembledProductDetailScreenState extends State<AssembledProductDetailScr
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Thông số kỹ thuật', style: AppTextStyles.titleSmall),
+          Text('Specifications', style: AppTextStyles.titleSmall),
           const SizedBox(height: 12),
           ...specs.asMap().entries.map((e) => Column(
             children: [
@@ -449,7 +449,7 @@ class _AssembledProductDetailScreenState extends State<AssembledProductDetailScr
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Mô tả sản phẩm', style: AppTextStyles.titleSmall),
+          Text('Description', style: AppTextStyles.titleSmall),
           const SizedBox(height: 10),
           Text(description, style: AppTextStyles.bodySecondary),
         ],
@@ -473,7 +473,7 @@ class _AssembledProductDetailScreenState extends State<AssembledProductDetailScr
             children: [
               const Icon(Icons.build_outlined, color: AppColors.primary, size: 18),
               const SizedBox(width: 8),
-              Text('Linh kiện trong build', style: AppTextStyles.titleSmall),
+              Text('Build components', style: AppTextStyles.titleSmall),
             ],
           ),
           const SizedBox(height: 12),
@@ -501,7 +501,7 @@ class _AssembledProductDetailScreenState extends State<AssembledProductDetailScr
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              d.componentName ?? d.baseKitName ?? 'Linh kiện',
+                              d.componentName ?? d.baseKitName ?? 'Component',
                               style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
                             ),
                             if (d.baseKitName != null && d.componentName != null)

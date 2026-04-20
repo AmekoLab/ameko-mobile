@@ -11,13 +11,18 @@ class AssembledProductListBloc extends Bloc<AssembledProductListEvent, Assembled
     on<FetchAssembledProducts>(_onFetch);
     on<LoadMoreAssembledProducts>(_onLoadMore);
     on<RefreshAssembledProducts>(_onRefresh);
+    on<SearchAssembledProducts>(_onSearch);
   }
 
   Future<void> _onFetch(FetchAssembledProducts event, Emitter<AssembledProductListState> emit) async {
-    if (state.status == AssembledProductListStatus.success) return; // prevent double fetch
+    if (state.status == AssembledProductListStatus.success && state.searchQuery == null) return;
     emit(state.copyWith(status: AssembledProductListStatus.loading, currentPage: 1));
     try {
-      final result = await repository.getAll(currentPage: 1, pageSize: _pageSize);
+      final result = await repository.getAll(
+        currentPage: 1, 
+        pageSize: _pageSize,
+        keyword: state.searchQuery,
+      );
       emit(state.copyWith(
         status: AssembledProductListStatus.success,
         products: result.items,
@@ -34,7 +39,11 @@ class AssembledProductListBloc extends Bloc<AssembledProductListEvent, Assembled
     emit(state.copyWith(status: AssembledProductListStatus.loadingMore));
     try {
       final nextPage = state.currentPage + 1;
-      final result = await repository.getAll(currentPage: nextPage, pageSize: _pageSize);
+      final result = await repository.getAll(
+        currentPage: nextPage, 
+        pageSize: _pageSize,
+        keyword: state.searchQuery,
+      );
       emit(state.copyWith(
         status: AssembledProductListStatus.success,
         products: [...state.products, ...result.items],
@@ -49,7 +58,35 @@ class AssembledProductListBloc extends Bloc<AssembledProductListEvent, Assembled
   Future<void> _onRefresh(RefreshAssembledProducts event, Emitter<AssembledProductListState> emit) async {
     emit(state.copyWith(status: AssembledProductListStatus.loading, currentPage: 1, products: []));
     try {
-      final result = await repository.getAll(currentPage: 1, pageSize: _pageSize);
+      final result = await repository.getAll(
+        currentPage: 1, 
+        pageSize: _pageSize,
+        keyword: state.searchQuery,
+      );
+      emit(state.copyWith(
+        status: AssembledProductListStatus.success,
+        products: result.items,
+        hasMore: result.hasMore,
+        currentPage: 1,
+      ));
+    } catch (e) {
+      emit(state.copyWith(status: AssembledProductListStatus.failure, error: e.toString()));
+    }
+  }
+
+  Future<void> _onSearch(SearchAssembledProducts event, Emitter<AssembledProductListState> emit) async {
+    emit(state.copyWith(
+      status: AssembledProductListStatus.loading,
+      currentPage: 1,
+      products: [],
+      searchQuery: event.query,
+    ));
+    try {
+      final result = await repository.getAll(
+        currentPage: 1,
+        pageSize: _pageSize,
+        keyword: event.query,
+      );
       emit(state.copyWith(
         status: AssembledProductListStatus.success,
         products: result.items,

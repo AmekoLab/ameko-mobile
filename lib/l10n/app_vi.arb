@@ -1,0 +1,21 @@
+{
+  "@@locale": "vi",
+  "appTitle": "Ameko",
+  "hello": "Xin chào",
+  "searchHint": "Tìm kiếm bàn phím...",
+  "home": "Trang chủ",
+  "chat": "Trò chuyện",
+  "orders": "Đơn hàng",
+  "profile": "Cá nhân",
+  "language": "Ngôn ngữ",
+  "settings": "Cài đặt",
+  "signOut": "Đăng xuất",
+  "selectLanguage": "Chọn ngôn ngữ",
+  "vietnamese": "Tiếng Việt",
+  "english": "Tiếng Anh",
+  "categories": "Danh mục",
+  "featuredProducts": "Sản phẩm nổi bật",
+  "seeAll": "Tất cả",
+  "exploreNow": "Khám phá ngay",
+  "discoverKeyboards": "Khám phá các loại Bàn phím"
+}

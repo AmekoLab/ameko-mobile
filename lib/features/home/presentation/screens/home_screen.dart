@@ -116,7 +116,7 @@ class HomeBodyPlaceholder extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Good morning! 👋', style: AppTextStyles.bodySecondary),
+                        Text('Hello, $userName! 👋', style: AppTextStyles.bodySecondary),
                         const SizedBox(height: 2),
                         Text(userName, style: AppTextStyles.heading),
                       ],

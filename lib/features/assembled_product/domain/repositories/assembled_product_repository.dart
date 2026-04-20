@@ -1,7 +1,7 @@
 import 'package:ameko_app/features/assembled_product/domain/entities/assembled_product_entity.dart';
 
 abstract class AssembledProductRepository {
-  Future<AssembledProductListResponse> getAll({int currentPage = 1, int pageSize = 10});
+  Future<AssembledProductListResponse> getAll({int currentPage = 1, int pageSize = 10, String? keyword});
   Future<AssembledProductDetailEntity> getById(String id);
   Future<List<AssembledProductEntity>> getByShop(String shopId);
 }
