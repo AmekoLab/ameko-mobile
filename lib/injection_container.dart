@@ -91,6 +91,7 @@ Future<void> setupDependencies() async {
     () => AuthBloc(
       repository: sl<AuthRepository>(),
       storage: sl<StorageService>(),
+      chatService: sl<ChatService>(),
     ),
   );
 
@@ -101,11 +102,17 @@ Future<void> setupDependencies() async {
   );
 
   sl.registerFactory<ChatListBloc>(
-    () => ChatListBloc(repository: sl<ChatRepository>()),
+    () => ChatListBloc(
+      repository: sl<ChatRepository>(),
+      chatService: sl<ChatService>(),
+    ),
   );
 
   sl.registerFactory<ChatDetailBloc>(
-    () => ChatDetailBloc(repository: sl<ChatRepository>()),
+    () => ChatDetailBloc(
+      repository: sl<ChatRepository>(),
+      chatService: sl<ChatService>(),
+    ),
   );
 
   sl.registerSingleton<AssembledProductRepository>(

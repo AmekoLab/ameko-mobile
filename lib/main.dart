@@ -1,8 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_localizations.dart';
+import 'package:ameko_app/core/network/dev_http_overrides.dart';
 import 'package:ameko_app/core/router/app_router.dart';
 import 'package:ameko_app/core/theme/app_theme.dart';
 import 'package:ameko_app/core/utils/app_bloc_observer.dart';
@@ -12,6 +14,9 @@ import 'package:ameko_app/injection_container.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Bypass SSL for local development (HTTPS 10.0.2.2)
+  HttpOverrides.global = DevHttpOverrides();
 
   // Load environment variables
   await dotenv.load(fileName: '.env');

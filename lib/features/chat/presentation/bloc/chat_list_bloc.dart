@@ -3,15 +3,51 @@ import 'package:ameko_app/features/chat/domain/entities/chat_entity.dart';
 import 'package:ameko_app/features/chat/domain/repositories/chat_repository.dart';
 import 'chat_list_event.dart';
 import 'chat_list_state.dart';
+import 'package:ameko_app/core/services/chat_service.dart';
 
 class ChatListBloc extends Bloc<ChatListEvent, ChatListState> {
   final ChatRepository repository;
+  final ChatService _chatService;
 
-  ChatListBloc({required this.repository}) : super(const ChatListState()) {
+  ChatListBloc({
+    required this.repository,
+    required ChatService chatService,
+  })  : _chatService = chatService,
+        super(const ChatListState()) {
     on<FetchConversations>(_onFetchConversations);
     on<LoadMoreConversations>(_onLoadMoreConversations);
     on<ListReceiveMessage>(_onListReceiveMessage);
     on<OptimisticMarkAsReadList>(_onOptimisticMarkAsReadList);
+
+    // Real-time listener
+    _chatService.onMessageReceived(_onSignalRMessage);
+  }
+
+  void _onSignalRMessage(Map<String, dynamic> data) {
+    // Support both PascalCase (Backend) and camelCase (Standard)
+    final convoId = (data['ConversationId'] ?? data['conversationId'])?.toString() ?? '';
+    final content = (data['Content'] ?? data['content'])?.toString() ?? '';
+    final senderId = (data['SenderId'] ?? data['senderId'])?.toString() ?? '';
+    final createdAtStr = (data['CreatedAt'] ?? data['createdAt'])?.toString();
+
+    final message = MessageEntity(
+      id: (data['Id'] ?? data['id'])?.toString() ?? '',
+      senderId: senderId,
+      content: content,
+      createdAt: createdAtStr != null ? DateTime.parse(createdAtStr) : DateTime.now(),
+    );
+    
+    add(ListReceiveMessage(
+      conversationId: convoId,
+      message: message,
+      isActiveConversation: false,
+    ));
+  }
+
+  @override
+  Future<void> close() {
+    _chatService.offMessageReceived(_onSignalRMessage);
+    return super.close();
   }
 
   Future<void> _onFetchConversations(
@@ -24,6 +60,12 @@ class ChatListBloc extends Bloc<ChatListEvent, ChatListState> {
         cursor: 1,
         pageSize: 20,
       );
+      
+      // Auto-join all conversation groups for real-time updates in the list
+      for (final convo in response.items) {
+        _chatService.joinConversation(convo.conversationId);
+      }
+
       emit(state.copyWith(
         status: ChatListStatus.success,
         conversations: response.items,
@@ -35,7 +77,7 @@ class ChatListBloc extends Bloc<ChatListEvent, ChatListState> {
       emit(state.copyWith(
         status: ChatListStatus.failure,
         error: e.toString(),
-        conversationsInitialized: true, // mark done even on error to avoid loop
+        conversationsInitialized: true,
       ));
     }
   }

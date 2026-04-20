@@ -5,16 +5,21 @@ import 'package:ameko_app/features/auth/domain/entities/user_entity.dart';
 import 'package:ameko_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:ameko_app/features/auth/presentation/bloc/auth_event.dart';
 import 'package:ameko_app/features/auth/presentation/bloc/auth_state.dart';
+import 'package:ameko_app/core/services/chat_service.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository _repository;
   final StorageService _storage;
+  final ChatService _chatService;
 
   AuthBloc({
     required AuthRepository repository,
     required StorageService storage,
+    required ChatService chatService,
   })  : _repository = repository,
         _storage = storage,
+        _chatService = chatService,
         super(const AuthInitial()) {
     on<AppStarted>(_onAppStarted);
     on<LoginRequested>(_onLoginRequested);
@@ -24,6 +29,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<ResetPasswordRequested>(_onResetPasswordRequested);
     on<LoggedOut>(_onLoggedOut);
     on<ProfileFetchRequested>(_onProfileFetchRequested);
+  }
+
+  Future<void> _initChat(String? token) async {
+    final hubUrl = dotenv.env['CHAT_HUB_URL'];
+    if (hubUrl != null) {
+      await _chatService.connect(hubUrl, token: token);
+    }
   }
 
   /// Check token on app start → auto-login if token exists.
@@ -39,6 +51,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         if (userJson != null) {
           final user = UserEntity.fromJson(userJson);
           appLogger.i('AppStarted: restoring session for ${user.username}');
+          
+          final token = await _storage.getToken();
+          _initChat(token); // Connect SignalR
+          
           emit(AuthSuccess(user: user));
           return;
         }
@@ -67,6 +83,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       },
       (user) {
         appLogger.i('Login success: ${user.username}');
+        
+        _storage.getToken().then((token) => _initChat(token)); // Connect SignalR
+        
         emit(AuthSuccess(user: user));
       },
     );
@@ -133,6 +152,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     LoggedOut event,
     Emitter<AuthState> emit,
   ) async {
+    await _chatService.disconnect(); // Disconnect SignalR
     final result = await _repository.logout();
     appLogger.i('User logged out');
     

@@ -163,24 +163,42 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   Widget _buildInputBar() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       decoration: BoxDecoration(
         color: AppColors.surface,
         border: Border(top: BorderSide(color: AppColors.divider.withValues(alpha: 0.1))),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -2)),
+        ],
       ),
       child: Row(
         children: [
+          // Grid/Apps button used as reload button
+          GestureDetector(
+            onTap: () => _bloc.add(FetchMessages(widget.chatId)),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.amazonBorder),
+                color: Colors.white,
+              ),
+              child: const Icon(Icons.grid_view_rounded, color: AppColors.amazonBtnPrimary, size: 20),
+            ),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: AppColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(24),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.amazonBorder),
               ),
               child: TextField(
                 controller: _inputCtrl,
                 style: AppTextStyles.body,
                 decoration: InputDecoration(
-                  hintText: 'Aa',
+                  hintText: 'Type a message...',
                   hintStyle: AppTextStyles.body.copyWith(color: AppColors.textHint),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   border: InputBorder.none,
@@ -189,10 +207,18 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 8),
-          IconButton(
-            icon: const Icon(Icons.send_rounded, color: AppColors.primary, size: 24),
-            onPressed: _sendMessage,
+          const SizedBox(width: 12),
+          // Send button in yellow circle
+          GestureDetector(
+            onTap: _sendMessage,
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.amazonBtnPrimary.withValues(alpha: 0.2), // Light yellow background
+              ),
+              child: const Icon(Icons.send_rounded, color: AppColors.amazonBtnPrimary, size: 22),
+            ),
           ),
         ],
       ),
@@ -213,70 +239,62 @@ class _MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-      children: [
-        if (!isMine && otherUserName.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(left: 42, bottom: 4),
-            child: Text(
-              otherUserName, 
-              style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600, color: AppColors.textSecondary),
-            ),
-          ),
-        Row(
-          mainAxisAlignment: isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            if (!isMine) ...[
-              const CircleAvatar(radius: 14, backgroundColor: AppColors.surfaceVariant, child: Icon(Icons.person, size: 16, color: AppColors.textHint)),
-              const SizedBox(width: 8),
-            ],
-            Flexible(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  color: isMine ? AppColors.primary : AppColors.surfaceVariant,
-                  borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(20),
-                    topRight: const Radius.circular(20),
-                    bottomLeft: Radius.circular(isMine ? 20 : 4),
-                    bottomRight: Radius.circular(isMine ? 4 : 20),
-                  ),
-                ),
-                constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-                child: Text(
-                  message.content,
-                  style: AppTextStyles.body.copyWith(
-                    color: isMine ? Colors.white : AppColors.textPrimary,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        Padding(
-          padding: EdgeInsets.only(top: 4, bottom: 8, left: isMine ? 0 : 42, right: isMine ? 4 : 0),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Column(
+        crossAxisAlignment: isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                DateFormat('MMM d, h:mm a').format(message.createdAt),
-                style: AppTextStyles.caption.copyWith(color: AppColors.textHint, fontSize: 10),
-              ),
-              if (isMine) ...[
-                const SizedBox(width: 4),
-                if (message.status == MessageStatus.sending)
-                  const Icon(Icons.circle_outlined, size: 10, color: AppColors.textHint)
-                else if (message.status == MessageStatus.error)
-                  const Icon(Icons.error_outline, size: 12, color: Colors.red)
-                else
-                  const Icon(Icons.check_circle, size: 10, color: AppColors.primary),
+              if (!isMine) ...[
+                AppAvatarCircle(name: otherUserName, radius: 14),
+                const SizedBox(width: 8),
               ],
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isMine ? AppColors.amazonBtnPrimary : Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(16),
+                      topRight: const Radius.circular(16),
+                      bottomLeft: Radius.circular(isMine ? 16 : 4),
+                      bottomRight: Radius.circular(isMine ? 4 : 16),
+                    ),
+                    boxShadow: [
+                      if (!isMine)
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                    ],
+                    border: isMine ? null : Border.all(color: AppColors.amazonBorder.withValues(alpha: 0.5)),
+                  ),
+                  constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+                  child: Text(
+                    message.content,
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.amazonText,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
-        ),
-      ],
+          // Small timestamp under bubble
+          Padding(
+            padding: EdgeInsets.only(top: 4, left: isMine ? 0 : 40, right: isMine ? 12 : 0),
+            child: Text(
+              DateFormat('HH:mm').format(message.createdAt),
+              style: AppTextStyles.caption.copyWith(color: AppColors.textHint, fontSize: 10),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

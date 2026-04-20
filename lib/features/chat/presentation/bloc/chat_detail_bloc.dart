@@ -4,24 +4,92 @@ import 'package:ameko_app/features/chat/domain/entities/chat_entity.dart';
 import 'package:ameko_app/features/chat/domain/repositories/chat_repository.dart';
 import 'chat_detail_event.dart';
 import 'chat_detail_state.dart';
+import 'package:ameko_app/core/services/chat_service.dart';
 
 class ChatDetailBloc extends Bloc<ChatDetailEvent, ChatDetailState> {
   final ChatRepository repository;
+  final ChatService _chatService;
   static const _uuid = Uuid();
 
-  ChatDetailBloc({required this.repository}) : super(const ChatDetailState()) {
+  ChatDetailBloc({
+    required this.repository,
+    required ChatService chatService,
+  })  : _chatService = chatService,
+        super(const ChatDetailState()) {
     on<FetchMessages>(_onFetchMessages);
     on<LoadMoreMessages>(_onLoadMoreMessages);
     on<SendMessage>(_onSendMessage);
     on<ReceiveMessage>(_onReceiveMessage);
     on<MarkMessagesRead>(_onMarkMessagesRead);
     on<ReactToMessage>(_onReactToMessage);
+    on<MessageReactionReceived>(_onMessageReactionReceived);
+    on<ReadReceiptReceived>(_onReadReceiptReceived);
+
+    // Real-time listeners
+    _chatService.onMessageReceived(_onSignalRMessage);
+    _chatService.onReactionChanged(_onSignalRReaction);
+    _chatService.onReadReceipt(_onSignalRReadReceipt);
+  }
+
+  void _onSignalRMessage(Map<String, dynamic> data) {
+    // Support both PascalCase (Backend) and camelCase (Standard)
+    final backendConvoId = (data['ConversationId'] ?? data['conversationId'])?.toString();
+    if (backendConvoId != state.conversationId) return;
+
+    final message = MessageEntity(
+      id: (data['Id'] ?? data['id'])?.toString() ?? 'sr-${DateTime.now().millisecondsSinceEpoch}',
+      senderId: (data['SenderId'] ?? data['senderId'])?.toString() ?? '',
+      content: (data['Content'] ?? data['content'])?.toString() ?? '',
+      createdAt: (data['CreatedAt'] ?? data['createdAt']) != null 
+          ? DateTime.parse((data['CreatedAt'] ?? data['createdAt']).toString()) 
+          : DateTime.now(),
+      status: MessageStatus.sent,
+      messageType: (data['MessageType'] ?? data['messageType']) as int? ?? 0,
+      reaction: (data['Reaction'] ?? data['reaction']) as int?,
+      tempId: (data['TempId'] ?? data['tempId'])?.toString(),
+    );
+    
+    add(ReceiveMessage(message));
+  }
+
+  void _onSignalRReaction(Map<String, dynamic> data) {
+    final backendConvoId = (data['ConversationId'] ?? data['conversationId'])?.toString();
+    if (backendConvoId != state.conversationId) return;
+
+    add(MessageReactionReceived(
+      messageId: (data['MessageId'] ?? data['messageId']).toString(),
+      reaction: (data['Reaction'] ?? data['reaction']) as int?,
+    ));
+  }
+
+  void _onSignalRReadReceipt(Map<String, dynamic> data) {
+    final backendConvoId = (data['ConversationId'] ?? data['conversationId'])?.toString();
+    if (backendConvoId != state.conversationId) return;
+
+    add(ReadReceiptReceived(
+      userId: (data['UserId'] ?? data['userId']).toString(),
+      upToMessageId: (data['UpToMessageId'] ?? data['upToMessageId']) as int,
+    ));
+  }
+
+  @override
+  Future<void> close() {
+    if (state.conversationId != null) {
+      _chatService.leaveConversation(state.conversationId!);
+    }
+    _chatService.offMessageReceived(_onSignalRMessage);
+    _chatService.offReactionChanged(_onSignalRReaction);
+    _chatService.offReadReceipt(_onSignalRReadReceipt);
+    return super.close();
   }
 
   Future<void> _onFetchMessages(
     FetchMessages event,
     Emitter<ChatDetailState> emit,
   ) async {
+    // Join SignalR group for this conversation
+    _chatService.joinConversation(event.conversationId);
+
     emit(state.copyWith(
       status: ChatDetailStatus.loading,
       cursor: 1,
@@ -35,7 +103,7 @@ class ChatDetailBloc extends Bloc<ChatDetailEvent, ChatDetailState> {
       );
       emit(state.copyWith(
         status: ChatDetailStatus.success,
-        messages: response.items,
+        messages: response.items.reversed.toList(),
         hasMore: response.hasMore,
         cursor: response.nextCursor ?? (state.cursor + 1),
       ));
@@ -61,7 +129,7 @@ class ChatDetailBloc extends Bloc<ChatDetailEvent, ChatDetailState> {
       );
       emit(state.copyWith(
         status: ChatDetailStatus.success,
-        messages: [...state.messages, ...response.items],
+        messages: [...state.messages, ...response.items.reversed.toList()],
         hasMore: response.hasMore,
         cursor: response.nextCursor ?? (state.cursor + 1),
       ));
@@ -187,5 +255,27 @@ class ChatDetailBloc extends Bloc<ChatDetailEvent, ChatDetailState> {
     } catch (_) {
       // silently ignore for now
     }
+  }
+
+  void _onMessageReactionReceived(
+    MessageReactionReceived event,
+    Emitter<ChatDetailState> emit,
+  ) {
+    final bucket = state.messages.map((m) {
+      if (m.id == event.messageId) return m.copyWith(reaction: event.reaction);
+      return m;
+    }).toList();
+    emit(state.copyWith(messages: bucket));
+  }
+
+  void _onReadReceiptReceived(
+    ReadReceiptReceived event,
+    Emitter<ChatDetailState> emit,
+  ) {
+    // In many apps, read receipts update the status of messages sent by CURRENT user.
+    // For now we just emit success to trigger any potential UI updates if needed,
+    // though the actual "read" state is often calculated vs user session.
+    // In our entity, we don't have a specific 'isReadByOther' field yet, 
+    // but we can update any messages up to upToMessageId if we had it.
   }
 }
