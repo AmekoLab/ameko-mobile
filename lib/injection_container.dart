@@ -26,6 +26,10 @@ import 'package:ameko_app/features/assembled_product/presentation/bloc/assembled
 import 'package:ameko_app/features/cart/data/repositories/cart_repository_impl.dart';
 import 'package:ameko_app/features/cart/domain/repositories/cart_repository.dart';
 import 'package:ameko_app/features/cart/presentation/bloc/cart_bloc.dart';
+import 'package:ameko_app/features/payment/data/repositories/payment_repository_impl.dart';
+import 'package:ameko_app/features/payment/domain/repositories/payment_repository.dart';
+import 'package:ameko_app/features/payment/presentation/bloc/checkout/checkout_bloc.dart';
+import 'package:ameko_app/features/payment/presentation/bloc/wallet/wallet_bloc.dart';
 import 'package:ameko_app/core/bloc/locale_bloc.dart';
 
 final sl = GetIt.instance;
@@ -86,6 +90,10 @@ Future<void> setupDependencies() async {
     ChatRepositoryImpl(dio),
   );
 
+  sl.registerSingleton<PaymentRepository>(
+    PaymentRepositoryImpl(dio),
+  );
+
   // ─── BLoCs ────────────────────────────────────────────────────────────────
   sl.registerFactory<AuthBloc>(
     () => AuthBloc(
@@ -133,6 +141,14 @@ Future<void> setupDependencies() async {
 
   sl.registerFactory<CartBloc>(
     () => CartBloc(repository: sl<CartRepository>()),
+  );
+
+  sl.registerFactory<CheckoutBloc>(
+    () => CheckoutBloc(repository: sl<PaymentRepository>()),
+  );
+
+  sl.registerFactory<WalletBloc>(
+    () => WalletBloc(repository: sl<PaymentRepository>()),
   );
 
   sl.registerFactory<LocaleBloc>(

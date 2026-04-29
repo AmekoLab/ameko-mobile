@@ -11,6 +11,7 @@ import 'package:ameko_app/core/utils/app_bloc_observer.dart';
 import 'package:ameko_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:ameko_app/core/bloc/locale_bloc.dart';
 import 'package:ameko_app/injection_container.dart';
+import 'package:ameko_app/features/payment/presentation/services/payment_link_handler.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,6 +55,20 @@ class _RouterWrapper extends StatefulWidget {
 
 class _RouterWrapperState extends State<_RouterWrapper> {
   late final router = AppRouter.createRouter(context);
+  late final PaymentLinkHandler _linkHandler;
+
+  @override
+  void initState() {
+    super.initState();
+    _linkHandler = PaymentLinkHandler(router);
+    _linkHandler.init();
+  }
+
+  @override
+  void dispose() {
+    _linkHandler.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

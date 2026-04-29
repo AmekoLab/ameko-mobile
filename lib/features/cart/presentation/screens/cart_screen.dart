@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:ameko_app/core/theme/app_colors.dart';
 import 'package:ameko_app/core/theme/app_text_styles.dart';
@@ -380,7 +381,12 @@ class _CartScreenState extends State<CartScreen> {
                 ),
                 const SizedBox(width: 12),
                 GestureDetector(
-                  onTap: selectedCount > 0 ? () {} : null,
+                  onTap: selectedCount > 0 ? () {
+                    context.push('/checkout', extra: {
+                      'itemIds': _selectedItems.toList(),
+                      'total': selectedTotal,
+                    });
+                  } : null,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                     color: selectedCount > 0 ? AppColors.primary : AppColors.textHint,

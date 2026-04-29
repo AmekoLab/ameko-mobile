@@ -27,6 +27,14 @@ import 'package:ameko_app/features/assembled_product/presentation/bloc/assembled
 import 'package:ameko_app/features/cart/presentation/screens/cart_screen.dart';
 import 'package:ameko_app/features/cart/presentation/bloc/cart_bloc.dart';
 import 'package:ameko_app/features/cart/presentation/bloc/cart_event.dart';
+import 'package:ameko_app/features/payment/presentation/bloc/checkout/checkout_bloc.dart';
+import 'package:ameko_app/features/payment/presentation/bloc/wallet/wallet_bloc.dart';
+import 'package:ameko_app/features/payment/presentation/screens/checkout_screen.dart';
+import 'package:ameko_app/features/payment/presentation/screens/vnpay_webview_screen.dart';
+import 'package:ameko_app/features/payment/presentation/screens/payment_result_screen.dart';
+import 'package:ameko_app/features/payment/presentation/screens/wallet_screen.dart';
+import 'package:ameko_app/features/payment/presentation/screens/wallet_topup_screen.dart';
+import 'package:ameko_app/features/payment/presentation/screens/pin_setup_screen.dart';
 import 'package:ameko_app/injection_container.dart';
 
 class AppRouter {
@@ -47,6 +55,12 @@ class AppRouter {
   static const assembledProducts = '/assembled-products';
   static const assembledProductDetail = '/assembled-products/:id';
   static const cart = '/cart';
+  static const checkout = '/checkout';
+  static const vnpayWebview = '/payment/vnpay-webview';
+  static const paymentResult = '/payment/result';
+  static const wallet = '/wallet';
+  static const walletTopup = '/wallet/topup';
+  static const pinSetup = '/wallet/pin-setup';
 
   static GoRouter createRouter(BuildContext context) {
     final authBloc = context.read<AuthBloc>();
@@ -180,6 +194,67 @@ class AppRouter {
                 create: (_) => sl<CartBloc>()..add(FetchCart()),
                 child: const CartScreen(),
               ),
+            ),
+            GoRoute(
+              path: checkout,
+              builder: (context, state) {
+                final extra = state.extra as Map<String, dynamic>;
+                return MultiBlocProvider(
+                  providers: [
+                    BlocProvider(create: (_) => sl<CheckoutBloc>()),
+                    BlocProvider(create: (_) => sl<WalletBloc>()),
+                  ],
+                  child: CheckoutScreen(
+                    selectedOrderItemIds: extra['itemIds'] as List<String>,
+                    totalAmount: extra['total'] as double,
+                  ),
+                );
+              },
+            ),
+            GoRoute(
+              path: vnpayWebview,
+              builder: (context, state) {
+                final extra = state.extra as Map<String, dynamic>;
+                return VnpayWebviewScreen(
+                  paymentUrl: extra['paymentUrl'] as String,
+                  checkoutBloc: extra['checkoutBloc'] as CheckoutBloc,
+                );
+              },
+            ),
+            GoRoute(
+              path: paymentResult,
+              builder: (context, state) {
+                final extra = state.extra as Map<String, dynamic>;
+                return PaymentResultScreen(
+                  success: extra['success'] as bool,
+                  paymentMethod: extra['paymentMethod'] as String,
+                  message: extra['message'] as String,
+                );
+              },
+            ),
+            GoRoute(
+              path: wallet,
+              builder: (context, state) => BlocProvider(
+                create: (_) => sl<WalletBloc>(),
+                child: const WalletScreen(),
+              ),
+            ),
+            GoRoute(
+              path: walletTopup,
+              builder: (context, state) => BlocProvider(
+                create: (_) => sl<WalletBloc>(),
+                child: const WalletTopupScreen(),
+              ),
+            ),
+            GoRoute(
+              path: pinSetup,
+              builder: (context, state) {
+                final isSetup = state.extra as bool? ?? true;
+                return BlocProvider(
+                  create: (_) => sl<WalletBloc>(),
+                  child: PinSetupScreen(isSetup: isSetup),
+                );
+              },
             ),
           ],
         ),
