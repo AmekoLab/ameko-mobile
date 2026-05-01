@@ -6,20 +6,24 @@ import 'package:ameko_app/features/auth/domain/repositories/auth_repository.dart
 import 'package:ameko_app/features/auth/presentation/bloc/auth_event.dart';
 import 'package:ameko_app/features/auth/presentation/bloc/auth_state.dart';
 import 'package:ameko_app/core/services/chat_service.dart';
+import 'package:ameko_app/features/social/data/services/social_signalr_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository _repository;
   final StorageService _storage;
   final ChatService _chatService;
+  final SocialSignalRService _socialService;
 
   AuthBloc({
     required AuthRepository repository,
     required StorageService storage,
     required ChatService chatService,
+    required SocialSignalRService socialService,
   })  : _repository = repository,
         _storage = storage,
         _chatService = chatService,
+        _socialService = socialService,
         super(const AuthInitial()) {
     on<AppStarted>(_onAppStarted);
     on<LoginRequested>(_onLoginRequested);
@@ -31,10 +35,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<ProfileFetchRequested>(_onProfileFetchRequested);
   }
 
-  Future<void> _initChat(String? token) async {
-    final hubUrl = dotenv.env['CHAT_HUB_URL'];
-    if (hubUrl != null) {
-      await _chatService.connect(hubUrl, token: token);
+  Future<void> _initRealtime(String? token) async {
+    final chatHubUrl = dotenv.env['CHAT_HUB_URL'];
+    final baseUrl = dotenv.env['BASE_URL'];
+    final socialHubUrl = dotenv.env['SOCIAL_HUB_URL'] ?? 
+        (baseUrl != null ? baseUrl.replaceAll('https://', 'wss://').replaceAll('http://', 'ws://') + 'hub' : null);
+
+    if (chatHubUrl != null) {
+      _chatService.connect(chatHubUrl, token: token);
+    }
+    
+    if (socialHubUrl != null) {
+      _socialService.connect(socialHubUrl, token: token);
     }
   }
 
@@ -53,7 +65,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           appLogger.i('AppStarted: restoring session for ${user.username}');
           
           final token = await _storage.getToken();
-          _initChat(token); // Connect SignalR
+          _initRealtime(token); // Connect SignalR
           
           emit(AuthSuccess(user: user));
           return;
@@ -84,7 +96,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       (user) {
         appLogger.i('Login success: ${user.username}');
         
-        _storage.getToken().then((token) => _initChat(token)); // Connect SignalR
+        _storage.getToken().then((token) => _initRealtime(token)); // Connect SignalR
         
         emit(AuthSuccess(user: user));
       },
@@ -152,7 +164,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     LoggedOut event,
     Emitter<AuthState> emit,
   ) async {
-    await _chatService.disconnect(); // Disconnect SignalR
+    await _chatService.disconnect();
+    await _socialService.disconnect();
     final result = await _repository.logout();
     appLogger.i('User logged out');
     

@@ -13,6 +13,10 @@ import 'package:ameko_app/features/auth/presentation/screens/otp_screen.dart';
 import 'package:ameko_app/features/auth/presentation/screens/profile_screen.dart';
 import 'package:ameko_app/features/auth/presentation/screens/reset_password_screen.dart';
 import 'package:ameko_app/features/home/presentation/screens/home_screen.dart';
+import 'package:ameko_app/features/social/presentation/screens/social_home_screen.dart';
+import 'package:ameko_app/features/social/presentation/screens/post_detail_screen.dart';
+import 'package:ameko_app/features/social/data/models/post_model.dart';
+import 'package:ameko_app/features/social/presentation/bloc/post_detail_bloc.dart';
 import 'package:ameko_app/features/chat/presentation/screens/chat_list_screen.dart';
 import 'package:ameko_app/features/chat/presentation/screens/chat_detail_screen.dart';
 import 'package:ameko_app/features/order/domain/entities/order_entity.dart';
@@ -142,14 +146,22 @@ class AppRouter {
           routes: [
             GoRoute(
               path: home,
-              builder: (_, __) => BlocProvider(
-                create: (_) => sl<AssembledProductListBloc>(),
-                child: const AssembledProductListScreen(),
-              ),
+              builder: (_, __) => const SocialHomeScreen(),
             ),
             GoRoute(
               path: chat,
               builder: (_, __) => const ChatListScreen(),
+            ),
+            GoRoute(
+              path: '/post-detail/:id',
+              builder: (context, state) {
+                final id = int.parse(state.pathParameters['id'] ?? '0');
+                final post = state.extra as PostModel?;
+                return BlocProvider(
+                  create: (context) => sl<PostDetailBloc>(param1: post)..add(FetchComments(id)),
+                  child: PostDetailScreen(postId: id, initialPost: post),
+                );
+              },
             ),
             GoRoute(
               path: '/chat/:id',

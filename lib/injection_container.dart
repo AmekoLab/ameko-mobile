@@ -30,6 +30,12 @@ import 'package:ameko_app/features/payment/data/repositories/payment_repository_
 import 'package:ameko_app/features/payment/domain/repositories/payment_repository.dart';
 import 'package:ameko_app/features/payment/presentation/bloc/checkout/checkout_bloc.dart';
 import 'package:ameko_app/features/payment/presentation/bloc/wallet/wallet_bloc.dart';
+import 'package:ameko_app/features/social/data/repositories/social_repository_impl.dart';
+import 'package:ameko_app/features/social/domain/repositories/social_repository.dart';
+import 'package:ameko_app/features/social/presentation/bloc/social_feed_bloc.dart';
+import 'package:ameko_app/features/social/presentation/bloc/post_detail_bloc.dart';
+import 'package:ameko_app/features/social/data/models/post_model.dart';
+import 'package:ameko_app/features/social/data/services/social_signalr_service.dart';
 import 'package:ameko_app/core/bloc/locale_bloc.dart';
 
 final sl = GetIt.instance;
@@ -53,6 +59,7 @@ Future<void> setupDependencies() async {
   );
 
   sl.registerSingleton<ChatService>(ChatService());
+  sl.registerSingleton<SocialSignalRService>(SocialSignalRService());
 
   // ─── Network ──────────────────────────────────────────────────────────────
   final dio = Dio(
@@ -94,12 +101,17 @@ Future<void> setupDependencies() async {
     PaymentRepositoryImpl(dio),
   );
 
+  sl.registerSingleton<SocialRepository>(
+    SocialRepositoryImpl(dio),
+  );
+
   // ─── BLoCs ────────────────────────────────────────────────────────────────
   sl.registerFactory<AuthBloc>(
     () => AuthBloc(
       repository: sl<AuthRepository>(),
       storage: sl<StorageService>(),
       chatService: sl<ChatService>(),
+      socialService: sl<SocialSignalRService>(),
     ),
   );
 
@@ -149,6 +161,14 @@ Future<void> setupDependencies() async {
 
   sl.registerFactory<WalletBloc>(
     () => WalletBloc(repository: sl<PaymentRepository>()),
+  );
+
+  sl.registerFactory<SocialFeedBloc>(
+    () => SocialFeedBloc(repository: sl<SocialRepository>()),
+  );
+
+  sl.registerFactoryParam<PostDetailBloc, PostModel?, void>(
+    (post, _) => PostDetailBloc(repository: sl<SocialRepository>(), initialPost: post),
   );
 
   sl.registerFactory<LocaleBloc>(

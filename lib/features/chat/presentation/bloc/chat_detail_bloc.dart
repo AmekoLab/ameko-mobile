@@ -92,20 +92,20 @@ class ChatDetailBloc extends Bloc<ChatDetailEvent, ChatDetailState> {
 
     emit(state.copyWith(
       status: ChatDetailStatus.loading,
-      cursor: 1,
+      cursor: null,
       conversationId: event.conversationId,
     ));
     try {
       final response = await repository.getMessages(
         conversationId: event.conversationId,
-        cursor: 1,
+        cursor: null,
         pageSize: 10,
       );
       emit(state.copyWith(
         status: ChatDetailStatus.success,
         messages: response.items.reversed.toList(),
         hasMore: response.hasMore,
-        cursor: response.nextCursor ?? (state.cursor + 1),
+        cursor: response.nextCursor,
       ));
     } catch (e) {
       emit(state.copyWith(status: ChatDetailStatus.failure, error: e.toString()));
@@ -131,7 +131,7 @@ class ChatDetailBloc extends Bloc<ChatDetailEvent, ChatDetailState> {
         status: ChatDetailStatus.success,
         messages: [...state.messages, ...response.items.reversed.toList()],
         hasMore: response.hasMore,
-        cursor: response.nextCursor ?? (state.cursor + 1),
+        cursor: response.nextCursor,
       ));
     } catch (e) {
       emit(state.copyWith(status: ChatDetailStatus.failure, error: e.toString()));

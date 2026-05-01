@@ -92,7 +92,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             appBar: AppBar(
               backgroundColor: AppColors.surface,
               elevation: 0,
-              leading: const BackButton(),
+              leading: const BackButton(color: AppColors.textPrimary),
               title: Row(
                 children: [
                   AppAvatarCircle(name: convo?.otherUserName ?? '?', radius: 18),

@@ -330,49 +330,20 @@ class _AssembledProductDetailScreenState extends State<AssembledProductDetailScr
                         child: Text('Out of stock', style: AppTextStyles.button.copyWith(color: AppColors.textHint)),
                       ),
                     )
-                  : Row(
-                      children: [
-                        Expanded(
-                          child: BlocBuilder<CartBloc, CartState>(
-                            builder: (context, cartState) {
-                              return OutlinedButton(
-                                onPressed: cartState.status == CartStatus.addingItem
-                                    ? null
-                                    : () {
-                                        context.read<CartBloc>().add(AddItemToCart(
-                                              productId: product.id,
-                                              quantity: 1,
-                                              isCustom: false,
-                                            ));
-                                      },
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
-                                  side: const BorderSide(color: AppColors.primary, width: 1.5),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    if (cartState.status == CartStatus.addingItem)
-                                      const SizedBox(
-                                        width: 18,
-                                        height: 18,
-                                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
-                                      )
-                                    else
-                                      const Icon(Icons.shopping_cart_outlined, color: AppColors.primary, size: 18),
-                                    const SizedBox(width: 8),
-                                    Text('Add to cart', style: AppTextStyles.button.copyWith(color: AppColors.primary)),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {},
+                  : SizedBox(
+                      width: double.infinity,
+                      child: BlocBuilder<CartBloc, CartState>(
+                        builder: (context, cartState) {
+                          return ElevatedButton(
+                            onPressed: cartState.status == CartStatus.addingItem
+                                ? null
+                                : () {
+                                    context.read<CartBloc>().add(AddItemToCart(
+                                          productId: product.id,
+                                          quantity: 1,
+                                          isCustom: false,
+                                        ));
+                                  },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,
@@ -380,10 +351,24 @@ class _AssembledProductDetailScreenState extends State<AssembledProductDetailScr
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               elevation: 0,
                             ),
-                            child: Text('Buy now', style: AppTextStyles.button),
-                          ),
-                        ),
-                      ],
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                if (cartState.status == CartStatus.addingItem)
+                                  const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  )
+                                else
+                                  const Icon(Icons.shopping_cart_outlined, color: Colors.white, size: 18),
+                                const SizedBox(width: 8),
+                                Text('Add to cart', style: AppTextStyles.button.copyWith(color: Colors.white)),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
                     ),
             ),
           ),

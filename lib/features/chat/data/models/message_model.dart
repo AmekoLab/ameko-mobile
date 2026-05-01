@@ -52,7 +52,7 @@ class MessageModel {
 
 class MessageResponse {
   final List<MessageModel> items;
-  final int? nextCursor;
+  final String? nextCursor;
   final bool hasMore;
 
   MessageResponse({
@@ -68,9 +68,7 @@ class MessageResponse {
               ?.map((e) => MessageModel.fromJson(e))
               .toList() ??
           [],
-      nextCursor: data['nextCursor'] != null
-          ? int.tryParse(data['nextCursor'].toString())
-          : null,
+      nextCursor: data['nextCursor']?.toString(),
       hasMore: data['hasMore'] ?? false,
     );
   }

@@ -54,10 +54,10 @@ class ChatListBloc extends Bloc<ChatListEvent, ChatListState> {
     FetchConversations event,
     Emitter<ChatListState> emit,
   ) async {
-    emit(state.copyWith(status: ChatListStatus.loading, cursor: 1));
+    emit(state.copyWith(status: ChatListStatus.loading, cursor: null));
     try {
       final response = await repository.getConversations(
-        cursor: 1,
+        cursor: null,
         pageSize: 20,
       );
       
@@ -70,7 +70,7 @@ class ChatListBloc extends Bloc<ChatListEvent, ChatListState> {
         status: ChatListStatus.success,
         conversations: response.items,
         hasMore: response.hasMore,
-        cursor: response.nextCursor ?? (state.cursor + 1),
+        cursor: response.nextCursor,
         conversationsInitialized: true,
       ));
     } catch (e) {
@@ -98,7 +98,7 @@ class ChatListBloc extends Bloc<ChatListEvent, ChatListState> {
         status: ChatListStatus.success,
         conversations: [...state.conversations, ...response.items],
         hasMore: response.hasMore,
-        cursor: response.nextCursor ?? (state.cursor + 1),
+        cursor: response.nextCursor,
       ));
     } catch (e) {
       emit(state.copyWith(status: ChatListStatus.failure, error: e.toString()));

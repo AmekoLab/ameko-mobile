@@ -95,7 +95,7 @@ class _AssembledProductListScreenState extends State<AssembledProductListScreen>
 
   Widget _buildSliverAppBar(BuildContext context, String userName, AppLocalizations l10n) {
     return SliverAppBar(
-      expandedHeight: _isSearching ? 130 : 100,
+      expandedHeight: 80,
       floating: true,
       snap: true,
       backgroundColor: AppColors.surface,
@@ -103,7 +103,7 @@ class _AssembledProductListScreenState extends State<AssembledProductListScreen>
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
           color: AppColors.surface,
-          padding: const EdgeInsets.fromLTRB(20, 48, 20, 8),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
           child: Column(
             children: [
               Row(
@@ -123,45 +123,11 @@ class _AssembledProductListScreenState extends State<AssembledProductListScreen>
                     ),
                   ),
                   IconButton(
-                    onPressed: () {
-                      setState(() {
-                        _isSearching = !_isSearching;
-                        if (!_isSearching) {
-                          _searchCtrl.clear();
-                          context.read<AssembledProductListBloc>().add(const SearchAssembledProducts(''));
-                        }
-                      });
-                    },
-                    icon: Icon(_isSearching ? Icons.close : Icons.search, color: AppColors.textSecondary),
-                  ),
-                  IconButton(
                     onPressed: () => context.push('/cart'),
                     icon: const Icon(Icons.shopping_cart_outlined, color: AppColors.textSecondary),
                   ),
                 ],
               ),
-              if (_isSearching) ...[
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceVariant.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: TextField(
-                    controller: _searchCtrl,
-                    onChanged: _onSearchChanged,
-                    autofocus: true,
-                    decoration: InputDecoration(
-                      hintText: l10n.searchHint,
-                      hintStyle: AppTextStyles.body.copyWith(color: AppColors.textHint, fontSize: 14),
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
         ),
@@ -221,7 +187,7 @@ class _AssembledProductListScreenState extends State<AssembledProductListScreen>
                       color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Text('🎹 Custom Keyboard',
+                    child: Text('Custom Keyboard',
                         style: AppTextStyles.caption.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
                   ),
                   const SizedBox(height: 10),
