@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:ameko_app/core/theme/app_colors.dart';
 import 'package:ameko_app/core/theme/app_text_styles.dart';
@@ -27,9 +28,43 @@ class OrderDetailScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         elevation: 0.5,
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
         title: Text('Order Details', style: AppTextStyles.headingMedium),
         centerTitle: true,
       ),
+      bottomNavigationBar: entity.orderStatus.toLowerCase() == 'completed'
+          ? Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (entity.orderItems.isNotEmpty) {
+                      final item = entity.orderItems.first;
+                      final productId = item.assembledProductId ?? item.productId;
+                      context.push('/assembled-products/$productId');
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Mua lại', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            )
+          : null,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),

@@ -41,11 +41,21 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
     return BlocListener<WalletBloc, WalletState>(
       listener: (context, state) {
         if (state is DepositReady) {
-          // Re-use VNPAY WebView for Top-up
           context.push('/payment/vnpay-webview', extra: {
             'paymentUrl': state.paymentUrl,
-            'checkoutBloc': null, // Wallet deposit doesn't need checkout confirm
-          }).then((_) => context.read<WalletBloc>().add(FetchWallet()));
+            'checkoutBloc': null,
+          }).then((result) {
+            if (result == true) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Nạp tiền thành công!'), backgroundColor: Colors.green),
+              );
+              context.read<WalletBloc>().add(FetchWallet());
+            } else if (result == false) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Giao dịch đã hủy'), backgroundColor: Colors.orange),
+              );
+            }
+          });
         } else if (state is WalletFailure) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.message), backgroundColor: Colors.red),
@@ -172,40 +182,40 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
                           height: 20,
                           child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                         )
-                      : Text(
-                          'Nạp tiền qua VNPAY',
-                          style: AppTextStyles.button.copyWith(color: Colors.white),
-                        ),
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPaymentNote() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.withOpacity(0.1)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.info_outline, color: Colors.blue, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Giao dịch được thực hiện an toàn qua cổng thanh toán VNPAY. Tiền sẽ được cộng vào ví ngay sau khi thanh toán thành công.',
-              style: AppTextStyles.caption.copyWith(color: Colors.blue[800], height: 1.4),
+                        : Text(
+                            'Nạp tiền qua Stripe',
+                            style: AppTextStyles.button.copyWith(color: Colors.white),
+                          ),
+                  ),
+                );
+              },
             ),
           ),
-        ],
-      ),
-    );
+        ),
+      );
+    }
+  
+    Widget _buildPaymentNote() {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.blue.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.blue.withOpacity(0.1)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.info_outline, color: Colors.blue, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Giao dịch được thực hiện an toàn qua cổng thanh toán Stripe. Tiền sẽ được cộng vào ví ngay sau khi thanh toán thành công.',
+                style: AppTextStyles.caption.copyWith(color: Colors.blue[800], height: 1.4),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
   }
-}

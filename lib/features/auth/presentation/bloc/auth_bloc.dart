@@ -28,9 +28,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AppStarted>(_onAppStarted);
     on<LoginRequested>(_onLoginRequested);
     on<RegisterRequested>(_onRegisterRequested);
+    on<SendOtpRequested>(_onSendOtpRequested);
     on<ForgotPasswordRequested>(_onForgotPasswordRequested);
     on<VerifyOtpRequested>(_onVerifyOtpRequested);
     on<ResetPasswordRequested>(_onResetPasswordRequested);
+    on<UpdateProfileRequested>(_onUpdateProfileRequested);
+    on<ChangePasswordRequested>(_onChangePasswordRequested);
     on<LoggedOut>(_onLoggedOut);
     on<ProfileFetchRequested>(_onProfileFetchRequested);
   }
@@ -50,7 +53,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  /// Check token on app start → auto-login if token exists.
   Future<void> _onAppStarted(
     AppStarted event,
     Emitter<AuthState> emit,
@@ -65,13 +67,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           appLogger.i('AppStarted: restoring session for ${user.username}');
           
           final token = await _storage.getToken();
-          _initRealtime(token); // Connect SignalR
+          _initRealtime(token);
           
           emit(AuthSuccess(user: user));
           return;
         }
       }
-      appLogger.d('AppStarted: no active session');
       emit(const AuthInitial());
     } catch (e) {
       appLogger.e('AppStarted error', error: e);
@@ -89,15 +90,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       password: event.password,
     );
     result.fold(
-      (failure) {
-        appLogger.w('Login failed: ${failure.message}');
-        emit(AuthFailure(message: failure.message));
-      },
+      (failure) => emit(AuthFailure(message: failure.message)),
       (user) {
-        appLogger.i('Login success: ${user.username}');
-        
-        _storage.getToken().then((token) => _initRealtime(token)); // Connect SignalR
-        
+        _storage.getToken().then((token) => _initRealtime(token));
         emit(AuthSuccess(user: user));
       },
     );
@@ -109,13 +104,35 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(const AuthLoading());
     final result = await _repository.register(
-      name: event.name,
+      username: event.username,
       email: event.email,
       password: event.password,
+      firstName: event.firstName,
+      lastName: event.lastName,
     );
+
+    await result.fold(
+      (failure) async => emit(AuthFailure(message: failure.message)),
+      (user) async {
+        // Step 2: Send activation code
+        final otpResult = await _repository.sendActivationCode(event.email);
+        otpResult.fold(
+          (failure) => emit(AuthFailure(message: 'Tài khoản đã tạo nhưng không gửi được mã kích hoạt: ${failure.message}')),
+          (_) => emit(const AuthActionSuccess(message: 'Đăng ký thành công. Vui lòng kiểm tra mã OTP trong email.')),
+        );
+      },
+    );
+  }
+
+  Future<void> _onSendOtpRequested(
+    SendOtpRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(const AuthLoading());
+    final result = await _repository.sendActivationCode(event.email);
     result.fold(
       (failure) => emit(AuthFailure(message: failure.message)),
-      (user) => emit(AuthSuccess(user: user)),
+      (_) => emit(const AuthActionSuccess(message: 'Mã OTP đã được gửi lại.')),
     );
   }
 
@@ -127,7 +144,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final result = await _repository.forgotPassword(email: event.email);
     result.fold(
       (failure) => emit(AuthFailure(message: failure.message)),
-      (message) => emit(AuthActionSuccess(message: message)),
+      (_) => emit(const AuthActionSuccess(message: 'Yêu cầu đặt lại mật khẩu đã được gửi.')),
     );
   }
 
@@ -144,7 +161,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     );
     result.fold(
       (failure) => emit(AuthFailure(message: failure.message)),
-      (message) => emit(AuthActionSuccess(message: message)),
+      (_) => emit(const AuthActionSuccess(message: 'Đặt lại mật khẩu thành công.')),
     );
   }
 
@@ -153,11 +170,57 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(const AuthLoading());
-    final result = await _repository.verifyOtp(otp: event.otp);
+    final result = await _repository.verifyOtp(email: event.email, code: event.code);
     result.fold(
       (failure) => emit(AuthFailure(message: failure.message)),
-      (_) => emit(const AuthActionSuccess(message: 'OTP verified successfully.')),
+      (_) => emit(const AuthActionSuccess(message: 'Xác thực OTP thành công. Vui lòng đăng nhập.')),
     );
+  }
+
+  Future<void> _onUpdateProfileRequested(
+    UpdateProfileRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is AuthSuccess) {
+      emit(const AuthLoading());
+      final result = await _repository.updateProfile(
+        userId: currentState.user.id,
+        firstName: event.firstName,
+        lastName: event.lastName,
+        gender: event.gender,
+        dateOfBirth: event.dateOfBirth,
+        phoneNumber: event.phoneNumber,
+        image: event.image,
+        storeAddress: event.storeAddress,
+        storeDescription: event.storeDescription,
+        banner: event.banner,
+      );
+      result.fold(
+        (failure) => emit(AuthFailure(message: failure.message)),
+        (user) => emit(AuthSuccess(user: user)),
+      );
+    }
+  }
+
+  Future<void> _onChangePasswordRequested(
+    ChangePasswordRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is AuthSuccess) {
+      emit(const AuthLoading());
+      final result = await _repository.changePassword(
+        userId: currentState.user.id,
+        oldPassword: event.oldPassword,
+        newPassword: event.newPassword,
+        confirmNewPassword: event.confirmNewPassword,
+      );
+      result.fold(
+        (failure) => emit(AuthFailure(message: failure.message)),
+        (_) => emit(const AuthActionSuccess(message: 'Đổi mật khẩu thành công.')),
+      );
+    }
   }
 
   Future<void> _onLoggedOut(
@@ -166,39 +229,21 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     await _chatService.disconnect();
     await _socialService.disconnect();
-    final result = await _repository.logout();
-    appLogger.i('User logged out');
-    
-    result.fold(
-      (failure) => emit(const AuthInitial()), // If somehow logout fails, still go to Initial
-      (message) {
-        emit(AuthActionSuccess(message: message));
-        emit(const AuthInitial());
-      },
-    );
+    await _repository.logout();
+    emit(const AuthInitial());
   }
 
   Future<void> _onProfileFetchRequested(
     ProfileFetchRequested event,
     Emitter<AuthState> emit,
   ) async {
-    final token = await _storage.getToken();
     final userJson = _storage.getUser();
-
-    if (token != null && userJson != null) {
+    if (userJson != null) {
       final id = userJson['id'] ?? '';
-      
-      final result = await _repository.getProfile(id: id, token: token);
-      
+      final result = await _repository.getProfile(id: id);
       result.fold(
-        (failure) {
-          appLogger.w('Profile refresh failed: ${failure.message}');
-          // Stay on current state
-        },
-        (user) {
-          appLogger.i('Profile refreshed for: ${user.username}');
-          emit(AuthSuccess(user: user));
-        },
+        (failure) => appLogger.w('Profile refresh failed: ${failure.message}'),
+        (user) => emit(AuthSuccess(user: user)),
       );
     }
   }

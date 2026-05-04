@@ -5,11 +5,15 @@ import 'package:ameko_app/core/utils/app_logger.dart';
 import 'package:ameko_app/features/payment/data/models/checkout_result_model.dart';
 import 'package:ameko_app/features/payment/data/models/wallet_model.dart';
 import 'package:ameko_app/features/payment/data/models/wallet_transaction_model.dart';
+import 'package:ameko_app/features/payment/data/models/transaction_model.dart';
 import 'package:ameko_app/features/payment/domain/entities/checkout_result_entity.dart';
 import 'package:ameko_app/features/payment/domain/entities/wallet_entity.dart';
 import 'package:ameko_app/features/payment/domain/entities/wallet_transaction_entity.dart';
+import 'package:ameko_app/features/payment/domain/entities/transaction_entity.dart';
 import 'package:ameko_app/features/payment/domain/entities/voucher_entity.dart';
+import 'package:ameko_app/features/payment/domain/entities/withdrawal_entity.dart';
 import 'package:ameko_app/features/payment/data/models/voucher_model.dart';
+import 'package:ameko_app/features/payment/data/models/withdrawal_model.dart';
 import 'package:ameko_app/features/payment/domain/repositories/payment_repository.dart';
 
 class PaymentRepositoryImpl implements PaymentRepository {
@@ -142,7 +146,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
   @override
   Future<Either<Failure, WalletEntity>> getWallet() async {
     try {
-      final response = await _dio.get('/api/v1/wallets');
+      final response = await _dio.get('/api/v1/wallet');
       return Right(WalletModel.fromJson(response.data));
     } on DioException catch (e) {
       return Left(_handleDioError(e));
@@ -156,7 +160,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
   Future<Either<Failure, List<WalletTransactionEntity>>>
       getTransactions() async {
     try {
-      final response = await _dio.get('/api/v1/wallets/transactions');
+      final response = await _dio.get('/api/v1/wallet/transactions');
       final data = response.data['data'];
       if (data is List) {
         final list = data
@@ -177,7 +181,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
   @override
   Future<Either<Failure, bool>> checkPinStatus() async {
     try {
-      final response = await _dio.get('/api/v1/wallets/pin/status');
+      final response = await _dio.get('/api/v1/wallet/pin/status');
       final data = response.data['data'] ?? response.data;
       final hasPin = data['hasPin'] == true;
       return Right(hasPin);
@@ -193,7 +197,7 @@ class PaymentRepositoryImpl implements PaymentRepository {
   Future<Either<Failure, bool>> setupPin(String pin) async {
     try {
       final response = await _dio.post(
-        '/api/v1/wallets/pin/setup',
+        '/api/v1/wallet/pin/setup',
         data: {'pin': pin},
       );
       return Right(response.data['success'] == true);
@@ -206,14 +210,217 @@ class PaymentRepositoryImpl implements PaymentRepository {
   }
 
   @override
+  Future<Either<Failure, bool>> changePin({
+    required String oldPin,
+    required String newPin,
+    required String confirmNewPin,
+  }) async {
+    try {
+      final response = await _dio.put(
+        '/api/v1/wallet/pin/change',
+        data: {
+          'oldPin': oldPin,
+          'newPin': newPin,
+          'confirmNewPin': confirmNewPin,
+        },
+      );
+      return Right(response.data['success'] == true);
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      appLogger.e('changePin error: $e');
+      return Left(UnknownFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, bool>> requestPinReset() async {
+    try {
+      final response = await _dio.post(
+        '/api/v1/wallet/pin/forgot',
+        data: {},
+      );
+      return Right(response.data['success'] == true);
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      appLogger.e('requestPinReset error: $e');
+      return Left(UnknownFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, bool>> resetPinWithOtp({
+    required String otp,
+    required String newPin,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/api/v1/wallet/pin/reset',
+        data: {
+          'otp': otp,
+          'newPin': newPin,
+        },
+      );
+      return Right(response.data['success'] == true);
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      appLogger.e('resetPinWithOtp error: $e');
+      return Left(UnknownFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, bool>> requestWithdrawal({
+    required double amount,
+    required String bankName,
+    required String bankAccountNumber,
+    required String bankAccountName,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/api/v1/withdrawals',
+        data: {
+          'amount': amount,
+          'bankName': bankName,
+          'bankAccountNumber': bankAccountNumber,
+          'bankAccountName': bankAccountName,
+        },
+      );
+      final success = response.data['success'] == true;
+      if (!success) {
+        final msg = response.data['message']?.toString() ?? 'Rút tiền thất bại';
+        return Left(ServerFailure(message: msg));
+      }
+      return const Right(true);
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      appLogger.e('requestWithdrawal error: $e');
+      return Left(UnknownFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<WithdrawalEntity>>> getMyWithdrawals({
+    int pageIndex = 1,
+    int pageSize = 20,
+  }) async {
+    try {
+      final response = await _dio.get(
+        '/api/v1/withdrawals/my',
+        queryParameters: {
+          'pageIndex': pageIndex,
+          'pageSize': pageSize,
+        },
+      );
+      final data = response.data['data'] ?? response.data;
+      if (data is List) {
+        return Right(data.map((e) => WithdrawalModel.fromJson(e)).toList());
+      }
+      return const Right([]);
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      appLogger.e('getMyWithdrawals error: $e');
+      return Left(UnknownFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<HeldTransactionEntity>>> getHeldTransactions() async {
+    try {
+      final response = await _dio.get('/api/v1/wallet/held-transactions');
+      final data = response.data['data'] ?? response.data;
+      if (data is List) {
+        final list = data
+            .map((e) => HeldTransactionModel.fromJson(e as Map<String, dynamic>))
+            .toList();
+        return Right(list);
+      }
+      return const Right([]);
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      appLogger.e('getHeldTransactions error: $e');
+      return Left(UnknownFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, PaginatedTransactionsEntity>> getPaginatedTransactions({
+    int? type,
+    int? status,
+    String? fromDate,
+    String? toDate,
+    int pageNumber = 1,
+    int pageSize = 20,
+    String? sortBy,
+    bool isAscending = false,
+  }) async {
+    try {
+      final queryParams = <String, String>{
+        'PageNumber': pageNumber.toString(),
+        'PageSize': pageSize.toString(),
+        'IsAscending': isAscending.toString(),
+      };
+      if (type != null) queryParams['Type'] = type.toString();
+      if (status != null) queryParams['Status'] = status.toString();
+      if (fromDate != null) queryParams['FromDate'] = fromDate;
+      if (toDate != null) queryParams['ToDate'] = toDate;
+      if (sortBy != null) queryParams['SortBy'] = sortBy;
+
+      final response = await _dio.get(
+        '/api/v1/Wallet/transactions',
+        queryParameters: queryParams,
+      );
+      final data = response.data['data'] ?? response.data;
+      final items = (data['items'] as List? ?? [])
+          .map((e) => TransactionModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+      return Right(PaginatedTransactionsEntity(
+        items: items,
+        totalCount: data['totalCount'] as int? ?? 0,
+        currentPage: data['currentPage'] as int? ?? 1,
+        pageSize: data['pageSize'] as int? ?? pageSize,
+        totalPages: data['totalPages'] as int? ?? 1,
+        hasPreviousPage: data['hasPreviousPage'] as bool? ?? false,
+        hasNextPage: data['hasNextPage'] as bool? ?? false,
+      ));
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      appLogger.e('getPaginatedTransactions error: $e');
+      return Left(UnknownFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, TransactionDetailEntity>> getTransactionDetail(
+      String transactionId) async {
+    try {
+      final response =
+          await _dio.get('/api/v1/Wallet/transactions/$transactionId');
+      final data = response.data['data'] ?? response.data;
+      return Right(TransactionDetailModel.fromJson(data as Map<String, dynamic>));
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      appLogger.e('getTransactionDetail error: $e');
+      return Left(UnknownFailure(message: e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, String>> deposit(double amount) async {
     try {
       final response = await _dio.post(
-        '/api/v1/wallets/deposit',
+        '/api/v1/wallet/deposit',
         data: {'amount': amount},
       );
       final data = response.data['data'] ?? response.data;
-      final url = data['paymentUrl']?.toString() ?? '';
+      final url = data['url']?.toString() ?? '';
       if (url.isEmpty) {
         return Left(ServerFailure(
             message: response.data['message'] ?? 'Không lấy được link nạp tiền'));

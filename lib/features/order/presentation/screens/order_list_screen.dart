@@ -97,11 +97,10 @@ class _OrderListScreenState extends State<OrderListScreen> with TickerProviderSt
             appBar: AppBar(
               backgroundColor: AppColors.surface,
               elevation: 0.5,
+              iconTheme: const IconThemeData(color: AppColors.textPrimary),
               title: Column(
                 children: [
                   Text('Orders', style: AppTextStyles.headingMedium),
-                  if (authState is AuthSuccess)
-                    Text('Role: ${authState.user.role}', style: AppTextStyles.caption.copyWith(fontSize: 8)),
                 ],
               ),
               centerTitle: true,
@@ -456,10 +455,16 @@ class _MinimalistOrderCard extends StatelessWidget {
                   onPressed: () => context.push('/orders/${order.orderId}', extra: order),
                   isPrimary: false,
                 ),
-                if (!isShopView) // Hide Repurchase in Shop view
+                if (!isShopView && order.orderStatus.toLowerCase() == 'completed') // Show Repurchase only for completed orders
                   _buildActionButton(
                     label: 'Mua lại',
-                    onPressed: () {},
+                    onPressed: () {
+                      if (order.orderItems.isNotEmpty) {
+                        final item = order.orderItems.first;
+                        final productId = item.assembledProductId ?? item.productId;
+                        context.push('/assembled-products/$productId');
+                      }
+                    },
                     isPrimary: true,
                   ),
               ],

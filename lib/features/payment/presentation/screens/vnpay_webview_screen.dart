@@ -11,12 +11,12 @@ import 'package:url_launcher/url_launcher.dart';
 
 class VnpayWebviewScreen extends StatefulWidget {
   final String paymentUrl;
-  final CheckoutBloc checkoutBloc;
+  final CheckoutBloc? checkoutBloc;
 
   const VnpayWebviewScreen({
     super.key,
     required this.paymentUrl,
-    required this.checkoutBloc,
+    this.checkoutBloc,
   });
 
   @override
@@ -30,126 +30,131 @@ class _VnpayWebviewScreenState extends State<VnpayWebviewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: widget.checkoutBloc,
-      child: BlocListener<CheckoutBloc, CheckoutState>(
-        listener: (context, state) {
-          if (state.status == CheckoutStatus.success && state.result != null) {
-            context.pushReplacement('/payment/result', extra: {
-              'success': true,
-              'paymentMethod': state.result!.paymentMethod,
-              'message': state.result!.message ?? 'Thanh toán thành công!',
-            });
-          } else if (state.status == CheckoutStatus.failure) {
-            context.pushReplacement('/payment/result', extra: {
-              'success': false,
-              'paymentMethod': 'VnPay',
-              'message': state.message,
-            });
-          }
-        },
-        child: Scaffold(
-          backgroundColor: Colors.white,
-          appBar: AppBar(
-            backgroundColor: Colors.white,
-            elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.close, color: AppColors.textPrimary),
-              onPressed: () => _showCancelDialog(context),
-            ),
-            title: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[700],
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: const Text(
-                    'VNPAY',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Thanh toán',
-                  style: AppTextStyles.titleSmall.copyWith(color: AppColors.textPrimary),
-                ),
-              ],
-            ),
-            actions: [
-              if (_isConfirming)
-                const Padding(
-                  padding: EdgeInsets.only(right: 16),
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                        color: AppColors.primary, strokeWidth: 2),
-                  ),
-                ),
-            ],
-          ),
-          body: Stack(
-            children: [
-              InAppWebView(
-                initialUrlRequest: URLRequest(
-                  url: WebUri(widget.paymentUrl),
-                ),
-                initialSettings: InAppWebViewSettings(
-                  javaScriptEnabled: true,
-                  useShouldOverrideUrlLoading: true,
-                  allowsInlineMediaPlayback: true,
-                ),
-                onWebViewCreated: (controller) {
-                  _webViewController = controller;
-                },
-                onLoadStart: (_, url) {
-                  setState(() => _isLoading = true);
-                  _handleUrlChange(context, url?.toString() ?? '');
-                },
-                onLoadStop: (_, __) => setState(() => _isLoading = false),
-                onReceivedServerTrustAuthRequest: (controller, challenge) async {
-                  // Bypass SSL errors for local development (e.g. 10.0.2.2)
-                  final host = challenge.protectionSpace.host;
-                  if (host == '10.0.2.2' || host == 'localhost' || host.startsWith('192.168.')) {
-                    return ServerTrustAuthResponse(action: ServerTrustAuthResponseAction.PROCEED);
-                  }
-                  return ServerTrustAuthResponse(action: ServerTrustAuthResponseAction.CANCEL);
-                },
-                shouldOverrideUrlLoading: (controller, action) async {
-                  final url = action.request.url;
-                  final urlStr = url?.toString() ?? '';
-
-                  // Handle deep links from backend (ameko://payment/callback)
-                  if (urlStr.startsWith('ameko://payment')) {
-                    _handleUrlChange(context, urlStr);
-                    return NavigationActionPolicy.CANCEL;
-                  }
-
-                  // Handle banking app schemes (vnpay://, tpb://, etc.)
-                  if (url != null && !['http', 'https', 'file', 'chrome', 'data', 'javascript', 'about'].contains(url.scheme)) {
-                    if (await canLaunchUrl(Uri.parse(urlStr))) {
-                      await launchUrl(Uri.parse(urlStr), mode: LaunchMode.externalApplication);
-                      return NavigationActionPolicy.CANCEL;
-                    }
-                  }
-
-                  _handleUrlChange(context, urlStr);
-                  return NavigationActionPolicy.ALLOW;
-                },
-              ),
-              if (_isLoading)
-                const LinearProgressIndicator(
-                  color: AppColors.primary,
-                  backgroundColor: Colors.transparent,
-                ),
-            ],
-          ),
+    if (widget.checkoutBloc != null) {
+      return BlocProvider.value(
+        value: widget.checkoutBloc!,
+        child: BlocListener<CheckoutBloc, CheckoutState>(
+          listener: (context, state) {
+            if (state.status == CheckoutStatus.success && state.result != null) {
+              context.pushReplacement('/payment/result', extra: {
+                'success': true,
+                'paymentMethod': state.result!.paymentMethod,
+                'message': state.result!.message ?? 'Thanh toán thành công!',
+              });
+            } else if (state.status == CheckoutStatus.failure) {
+              context.pushReplacement('/payment/result', extra: {
+                'success': false,
+                'paymentMethod': 'VnPay',
+                'message': state.message,
+              });
+            }
+          },
+          child: _buildScaffold(context),
         ),
+      );
+    }
+
+    return _buildScaffold(context);
+  }
+
+  Widget _buildScaffold(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: AppColors.textPrimary),
+          onPressed: () => _showCancelDialog(context),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.blue[700],
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Text(
+                'THANH TOÁN',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Cổng thanh toán',
+              style: AppTextStyles.titleSmall.copyWith(color: AppColors.textPrimary),
+            ),
+          ],
+        ),
+        actions: [
+          if (_isConfirming)
+            const Padding(
+              padding: EdgeInsets.only(right: 16),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                    color: AppColors.primary, strokeWidth: 2),
+              ),
+            ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          InAppWebView(
+            initialUrlRequest: URLRequest(
+              url: WebUri(widget.paymentUrl),
+            ),
+            initialSettings: InAppWebViewSettings(
+              javaScriptEnabled: true,
+              useShouldOverrideUrlLoading: true,
+              allowsInlineMediaPlayback: true,
+            ),
+            onWebViewCreated: (controller) {
+              _webViewController = controller;
+            },
+            onLoadStart: (_, url) {
+              setState(() => _isLoading = true);
+              _handleUrlChange(context, url?.toString() ?? '');
+            },
+            onLoadStop: (_, __) => setState(() => _isLoading = false),
+            onReceivedServerTrustAuthRequest: (controller, challenge) async {
+              final host = challenge.protectionSpace.host;
+              if (host == '10.0.2.2' || host == 'localhost' || host.startsWith('192.168.')) {
+                return ServerTrustAuthResponse(action: ServerTrustAuthResponseAction.PROCEED);
+              }
+              return ServerTrustAuthResponse(action: ServerTrustAuthResponseAction.CANCEL);
+            },
+            shouldOverrideUrlLoading: (controller, action) async {
+              final url = action.request.url;
+              final urlStr = url?.toString() ?? '';
+
+              if (urlStr.startsWith('ameko://payment')) {
+                _handleUrlChange(context, urlStr);
+                return NavigationActionPolicy.CANCEL;
+              }
+
+              if (url != null && !['http', 'https', 'file', 'chrome', 'data', 'javascript', 'about'].contains(url.scheme)) {
+                if (await canLaunchUrl(Uri.parse(urlStr))) {
+                  await launchUrl(Uri.parse(urlStr), mode: LaunchMode.externalApplication);
+                  return NavigationActionPolicy.CANCEL;
+                }
+              }
+
+              _handleUrlChange(context, urlStr);
+              return NavigationActionPolicy.ALLOW;
+            },
+          ),
+          if (_isLoading)
+            const LinearProgressIndicator(
+              color: AppColors.primary,
+              backgroundColor: Colors.transparent,
+            ),
+        ],
       ),
     );
   }
@@ -157,13 +162,23 @@ class _VnpayWebviewScreenState extends State<VnpayWebviewScreen> {
   void _handleUrlChange(BuildContext context, String url) {
     if (_isConfirming) return;
 
-    // Detect deep link from backend redirect or VNPAY response parameters
-    if (url.startsWith('ameko://payment') || url.contains('vnp_ResponseCode')) {
-      setState(() => _isConfirming = true);
+    // Detect Success/Cancel URLs (Generic for Stripe/Direct redirects)
+    if (url.contains('payment/success')) {
+      Navigator.of(context).pop(true);
+      return;
+    }
+    if (url.contains('payment/cancel')) {
+      Navigator.of(context).pop(false);
+      return;
+    }
 
+    // VNPAY specific logic
+    if (url.startsWith('ameko://payment') || url.contains('vnp_ResponseCode')) {
+      if (widget.checkoutBloc == null) return;
+      
+      setState(() => _isConfirming = true);
       final uri = Uri.tryParse(url);
       if (uri != null) {
-        // If it's the deep link, parse query parameters and go to result screen
         if (url.startsWith('ameko://payment')) {
           final queryParams = uri.queryParameters;
           final paid = queryParams['paid'] == '1';
@@ -177,9 +192,8 @@ class _VnpayWebviewScreenState extends State<VnpayWebviewScreen> {
           return;
         }
 
-        // If it's a direct VNPAY return URL (for normal flow), trigger confirmation
         final params = Map<String, String>.from(uri.queryParameters);
-        widget.checkoutBloc.add(ConfirmVnpayPayment(params));
+        widget.checkoutBloc!.add(ConfirmVnpayPayment(params));
       }
     }
   }
@@ -191,7 +205,7 @@ class _VnpayWebviewScreenState extends State<VnpayWebviewScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Huỷ thanh toán?', style: AppTextStyles.titleSmall),
         content: Text(
-          'Bạn có chắc muốn huỷ thanh toán VNPAY không?',
+          'Bạn có chắc muốn huỷ thanh toán không?',
           style: AppTextStyles.bodySecondary,
         ),
         actions: [
@@ -213,7 +227,7 @@ class _VnpayWebviewScreenState extends State<VnpayWebviewScreen> {
       ),
     );
     if (confirmed == true && mounted) {
-      context.go('/home');
+      Navigator.of(context).pop(false);
     }
   }
 }

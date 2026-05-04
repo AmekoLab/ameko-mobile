@@ -12,6 +12,8 @@ import 'package:ameko_app/features/auth/presentation/screens/forgot_password_scr
 import 'package:ameko_app/features/auth/presentation/screens/otp_screen.dart';
 import 'package:ameko_app/features/auth/presentation/screens/profile_screen.dart';
 import 'package:ameko_app/features/auth/presentation/screens/reset_password_screen.dart';
+import 'package:ameko_app/features/auth/presentation/screens/edit_profile_screen.dart';
+import 'package:ameko_app/features/auth/presentation/screens/change_password_screen.dart';
 import 'package:ameko_app/features/home/presentation/screens/home_screen.dart';
 import 'package:ameko_app/features/social/presentation/screens/social_home_screen.dart';
 import 'package:ameko_app/features/social/presentation/screens/post_detail_screen.dart';
@@ -39,6 +41,10 @@ import 'package:ameko_app/features/payment/presentation/screens/payment_result_s
 import 'package:ameko_app/features/payment/presentation/screens/wallet_screen.dart';
 import 'package:ameko_app/features/payment/presentation/screens/wallet_topup_screen.dart';
 import 'package:ameko_app/features/payment/presentation/screens/pin_setup_screen.dart';
+import 'package:ameko_app/features/payment/presentation/screens/pin_change_screen.dart';
+import 'package:ameko_app/features/payment/presentation/screens/pin_reset_screen.dart';
+import 'package:ameko_app/features/payment/presentation/screens/wallet_dashboard_screen.dart';
+import 'package:ameko_app/features/payment/presentation/screens/transaction_detail_screen.dart';
 import 'package:ameko_app/injection_container.dart';
 
 class AppRouter {
@@ -63,8 +69,14 @@ class AppRouter {
   static const vnpayWebview = '/payment/vnpay-webview';
   static const paymentResult = '/payment/result';
   static const wallet = '/wallet';
+  static const walletDashboard = '/wallet/dashboard';
   static const walletTopup = '/wallet/topup';
   static const pinSetup = '/wallet/pin-setup';
+  static const pinChange = '/wallet/pin-change';
+  static const pinReset = '/wallet/pin-reset';
+  static const transactionDetail = '/wallet/transaction/:id';
+  static const editProfile = '/profile/edit';
+  static const changePassword = '/profile/change-password';
 
   static GoRouter createRouter(BuildContext context) {
     final authBloc = context.read<AuthBloc>();
@@ -187,6 +199,14 @@ class AppRouter {
               builder: (_, __) => const ProfileScreen(),
             ),
             GoRoute(
+              path: editProfile,
+              builder: (_, __) => const EditProfileScreen(),
+            ),
+            GoRoute(
+              path: changePassword,
+              builder: (_, __) => const ChangePasswordScreen(),
+            ),
+            GoRoute(
               path: assembledProducts,
               builder: (_, __) => BlocProvider(
                 create: (_) => sl<AssembledProductListBloc>()..add(FetchAssembledProducts()),
@@ -234,7 +254,7 @@ class AppRouter {
                 final extra = state.extra as Map<String, dynamic>;
                 return VnpayWebviewScreen(
                   paymentUrl: extra['paymentUrl'] as String,
-                  checkoutBloc: extra['checkoutBloc'] as CheckoutBloc,
+                  checkoutBloc: extra['checkoutBloc'] as CheckoutBloc?,
                 );
               },
             ),
@@ -253,7 +273,14 @@ class AppRouter {
               path: wallet,
               builder: (context, state) => BlocProvider(
                 create: (_) => sl<WalletBloc>(),
-                child: const WalletScreen(),
+                child: const WalletDashboardScreen(),
+              ),
+            ),
+            GoRoute(
+              path: walletDashboard,
+              builder: (context, state) => BlocProvider(
+                create: (_) => sl<WalletBloc>(),
+                child: const WalletDashboardScreen(),
               ),
             ),
             GoRoute(
@@ -270,6 +297,30 @@ class AppRouter {
                 return BlocProvider(
                   create: (_) => sl<WalletBloc>(),
                   child: PinSetupScreen(isSetup: isSetup),
+                );
+              },
+            ),
+            GoRoute(
+              path: pinChange,
+              builder: (context, state) => BlocProvider(
+                create: (_) => sl<WalletBloc>(),
+                child: const PinChangeScreen(),
+              ),
+            ),
+            GoRoute(
+              path: pinReset,
+              builder: (context, state) => BlocProvider(
+                create: (_) => sl<WalletBloc>(),
+                child: const PinResetScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/wallet/transaction/:id',
+              builder: (context, state) {
+                final id = state.pathParameters['id'] ?? '';
+                return BlocProvider(
+                  create: (_) => sl<WalletBloc>(),
+                  child: TransactionDetailScreen(transactionId: id),
                 );
               },
             ),

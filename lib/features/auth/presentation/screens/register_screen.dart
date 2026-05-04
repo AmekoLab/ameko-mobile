@@ -28,11 +28,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _submit(BuildContext context) {
     if (_formKey.currentState?.saveAndValidate() ?? false) {
       final values = _formKey.currentState!.value;
+      final fullName = (values['name'] as String).trim();
+      final email = (values['email'] as String).trim();
+      final password = values['password'] as String;
+      
+      final nameParts = fullName.split(' ');
+      final firstName = nameParts.first;
+      final lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : 'User';
+      final username = email.split('@')[0];
+
       context.read<AuthBloc>().add(
             RegisterRequested(
-              name: values['name'] as String,
-              email: values['email'] as String,
-              password: values['password'] as String,
+              username: username,
+              firstName: firstName,
+              lastName: lastName,
+              email: email,
+              password: password,
             ),
           );
     }
@@ -42,8 +53,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
-        if (state is AuthSuccess) {
-          context.go(AppRouter.home);
+        if (state is AuthActionSuccess) {
+          AppSnackBar.showSuccess(context, message: state.message);
+          final email = _formKey.currentState?.value['email'] as String?;
+          context.push('/auth/otp?email=$email');
         } else if (state is AuthFailure) {
           AppSnackBar.showError(context, message: state.message);
         }
@@ -101,13 +114,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       name: 'password',
                       hint: 'Password',
                       isPassword: true,
-                      textInputAction: TextInputAction.done,
+                      textInputAction: TextInputAction.next,
                       prefixIcon: const Icon(
                         Icons.lock_outline,
                         color: AppColors.textSecondary,
                         size: 20,
                       ),
                       validator: AppValidators.validatePassword,
+                    ),
+                    AppSpacing.v16,
+                    AppTextField(
+                      name: 'confirmPassword',
+                      hint: 'Confirm Password',
+                      isPassword: true,
+                      textInputAction: TextInputAction.done,
+                      prefixIcon: const Icon(
+                        Icons.lock_reset,
+                        color: AppColors.textSecondary,
+                        size: 20,
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) return 'Please confirm your password';
+                        if (value != _formKey.currentState?.fields['password']?.value) return 'Passwords do not match';
+                        return null;
+                      },
                     ),
                     AppSpacing.v32,
                     AppButton(

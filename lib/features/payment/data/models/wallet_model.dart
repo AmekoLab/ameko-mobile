@@ -4,6 +4,7 @@ class WalletModel extends WalletEntity {
   const WalletModel({
     required super.id,
     required super.balance,
+    required super.heldBalance,
     super.currency,
   });
 
@@ -12,6 +13,7 @@ class WalletModel extends WalletEntity {
     return WalletModel(
       id: data['id']?.toString() ?? '',
       balance: _parseDouble(data['balance']),
+      heldBalance: _parseDouble(data['heldBalance']),
       currency: data['currency']?.toString() ?? 'VND',
     );
   }
