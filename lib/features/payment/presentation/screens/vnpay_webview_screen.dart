@@ -34,13 +34,13 @@ class _VnpayWebviewScreenState extends State<VnpayWebviewScreen> {
       value: widget.checkoutBloc,
       child: BlocListener<CheckoutBloc, CheckoutState>(
         listener: (context, state) {
-          if (state is CheckoutSuccess) {
+          if (state.status == CheckoutStatus.success && state.result != null) {
             context.pushReplacement('/payment/result', extra: {
               'success': true,
-              'paymentMethod': state.result.paymentMethod,
-              'message': state.result.message ?? 'Thanh toán thành công!',
+              'paymentMethod': state.result!.paymentMethod,
+              'message': state.result!.message ?? 'Thanh toán thành công!',
             });
-          } else if (state is CheckoutFailure) {
+          } else if (state.status == CheckoutStatus.failure) {
             context.pushReplacement('/payment/result', extra: {
               'success': false,
               'paymentMethod': 'VnPay',

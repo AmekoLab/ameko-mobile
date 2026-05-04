@@ -8,6 +8,8 @@ import 'package:ameko_app/features/payment/data/models/wallet_transaction_model.
 import 'package:ameko_app/features/payment/domain/entities/checkout_result_entity.dart';
 import 'package:ameko_app/features/payment/domain/entities/wallet_entity.dart';
 import 'package:ameko_app/features/payment/domain/entities/wallet_transaction_entity.dart';
+import 'package:ameko_app/features/payment/domain/entities/voucher_entity.dart';
+import 'package:ameko_app/features/payment/data/models/voucher_model.dart';
 import 'package:ameko_app/features/payment/domain/repositories/payment_repository.dart';
 
 class PaymentRepositoryImpl implements PaymentRepository {
@@ -24,6 +26,8 @@ class PaymentRepositoryImpl implements PaymentRepository {
     required String receiverName,
     required String receiverPhone,
     String? shippingNote,
+    String? appliedSystemVoucherCode,
+    Map<String, String>? appliedShopVoucherCodes,
   }) async {
     try {
       // Step 1: Create Order
@@ -35,6 +39,8 @@ class PaymentRepositoryImpl implements PaymentRepository {
         'receiverName': receiverName,
         'receiverPhone': receiverPhone,
         'note': shippingNote ?? '',
+        'appliedSystemVoucherCode': appliedSystemVoucherCode,
+        'appliedShopVoucherCodes': appliedShopVoucherCodes ?? {},
         'items': [], // Backend expects this list
         'successUrl': 'https://ameko.vn/payment-success', // Placeholder
         'cancelUrl': 'https://ameko.vn/payment-cancel',
@@ -82,6 +88,8 @@ class PaymentRepositoryImpl implements PaymentRepository {
     required String receiverPhone,
     required String walletPin,
     String? shippingNote,
+    String? appliedSystemVoucherCode,
+    Map<String, String>? appliedShopVoucherCodes,
   }) async {
     try {
       final response = await _dio.post('/api/v1/orders/checkout', data: {
@@ -92,6 +100,8 @@ class PaymentRepositoryImpl implements PaymentRepository {
         'receiverPhone': receiverPhone,
         'note': shippingNote,
         'walletPin': walletPin,
+        'appliedSystemVoucherCode': appliedSystemVoucherCode,
+        'appliedShopVoucherCodes': appliedShopVoucherCodes ?? {},
       });
       final result = CheckoutResultModel.fromJson(response.data, 'Wallet');
       if (result.isSuccess) {
@@ -213,6 +223,49 @@ class PaymentRepositoryImpl implements PaymentRepository {
       return Left(_handleDioError(e));
     } catch (e) {
       appLogger.e('deposit error: $e');
+      return Left(UnknownFailure(message: e.toString()));
+    }
+  }
+
+  // ─── Vouchers ─────────────────────────────────────────────────────────────
+
+  @override
+  Future<Either<Failure, ApplicableVoucherResponseEntity>> getApplicableVouchers() async {
+    try {
+      final response = await _dio.get('/api/v1/voucher/applicable');
+      final data = response.data['data'] ?? response.data;
+      final result = ApplicableVoucherResponseModel.fromJson(data);
+      return Right(result.toEntity());
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      appLogger.e('getApplicableVouchers error: $e');
+      return Left(UnknownFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, CalculatePreviewResponseEntity>> calculatePreview({
+    required List<String> selectedOrderItemIds,
+    String? appliedSystemVoucherCode,
+    Map<String, String>? appliedShopVoucherCodes,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/api/v1/orders/calculate-preview',
+        data: {
+          'selectedOrderItemIds': selectedOrderItemIds,
+          'appliedSystemVoucherCode': appliedSystemVoucherCode,
+          'appliedShopVoucherCodes': appliedShopVoucherCodes ?? {},
+        },
+      );
+      final data = response.data['data'] ?? response.data;
+      final result = CalculatePreviewResponseModel.fromJson(data);
+      return Right(result.toEntity());
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    } catch (e) {
+      appLogger.e('calculatePreview error: $e');
       return Left(UnknownFailure(message: e.toString()));
     }
   }

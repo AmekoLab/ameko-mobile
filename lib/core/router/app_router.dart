@@ -202,8 +202,11 @@ class AppRouter {
             ),
             GoRoute(
               path: cart,
-              builder: (_, __) => BlocProvider(
-                create: (_) => sl<CartBloc>()..add(FetchCart()),
+              builder: (_, __) => MultiBlocProvider(
+                providers: [
+                  BlocProvider(create: (_) => sl<CartBloc>()..add(FetchCart())),
+                  BlocProvider(create: (_) => sl<CheckoutBloc>()),
+                ],
                 child: const CartScreen(),
               ),
             ),
@@ -219,6 +222,8 @@ class AppRouter {
                   child: CheckoutScreen(
                     selectedOrderItemIds: extra['itemIds'] as List<String>,
                     totalAmount: extra['total'] as double,
+                    initialSystemVoucherCode: extra['systemVoucherCode'] as String?,
+                    initialShopVoucherCodes: extra['shopVoucherCodes'] as Map<String, String>?,
                   ),
                 );
               },

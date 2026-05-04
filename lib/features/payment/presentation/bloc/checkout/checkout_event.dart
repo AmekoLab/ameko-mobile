@@ -67,4 +67,30 @@ class ConfirmVnpayPayment extends CheckoutEvent {
   List<Object?> get props => [queryParams];
 }
 
+class FetchApplicableVouchers extends CheckoutEvent {}
+
+class SelectVoucher extends CheckoutEvent {
+  final List<String> selectedOrderItemIds;
+  final String? systemVoucherCode;
+  final Map<String, String>? shopVoucherCodes;
+
+  const SelectVoucher({
+    required this.selectedOrderItemIds,
+    this.systemVoucherCode,
+    this.shopVoucherCodes,
+  });
+
+  @override
+  List<Object?> get props => [selectedOrderItemIds, systemVoucherCode, shopVoucherCodes];
+}
+
+class CalculatePreview extends CheckoutEvent {
+  final List<String> selectedOrderItemIds;
+
+  const CalculatePreview(this.selectedOrderItemIds);
+
+  @override
+  List<Object?> get props => [selectedOrderItemIds];
+}
+
 class ResetCheckout extends CheckoutEvent {}

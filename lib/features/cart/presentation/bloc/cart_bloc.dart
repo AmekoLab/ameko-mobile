@@ -10,6 +10,7 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     on<FetchCart>(_onFetchCart);
     on<AddItemToCart>(_onAddItemToCart);
     on<UpdateCartItemQuantity>(_onUpdateCartItemQuantity);
+    on<RemoveCartItems>(_onRemoveCartItems);
   }
 
   Future<void> _onFetchCart(FetchCart event, Emitter<CartState> emit) async {
@@ -50,6 +51,18 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     try {
       await repository.updateCartItemQuantity(event.itemId, event.quantity);
       // Re-fetch cart after updating
+      add(FetchCart());
+    } catch (e) {
+      emit(state.copyWith(
+        status: CartStatus.failure,
+        error: e.toString().replaceFirst('Exception: ', ''),
+      ));
+    }
+  }
+
+  Future<void> _onRemoveCartItems(RemoveCartItems event, Emitter<CartState> emit) async {
+    try {
+      await repository.removeFromCart(event.itemIds);
       add(FetchCart());
     } catch (e) {
       emit(state.copyWith(

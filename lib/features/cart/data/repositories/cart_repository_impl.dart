@@ -13,8 +13,22 @@ class CartRepositoryImpl implements CartRepository {
   Future<CartEntity> getCart() async {
     try {
       final response = await _dio.get('/api/v1/orders/cart');
-      final data = response.data['data'] as Map<String, dynamic>;
-      return CartModel.fromJson(data);
+      final data = response.data['data'];
+      
+      if (data == null) {
+        return const CartEntity(
+          orderId: '',
+          shopId: '',
+          shopName: '',
+          subTotal: 0,
+          shippingFee: 0,
+          discountAmount: 0,
+          totalAmount: 0,
+          items: [],
+        );
+      }
+      
+      return CartModel.fromJson(data as Map<String, dynamic>);
     } catch (e) {
       appLogger.e('Error fetching cart: $e');
       rethrow;
@@ -63,6 +77,21 @@ class CartRepositoryImpl implements CartRepository {
       throw Exception(message);
     } catch (e) {
       appLogger.e('Error updating cart quantity: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> removeFromCart(List<String> itemIds) async {
+    try {
+      for (final id in itemIds) {
+        await _dio.delete('/api/v1/orders/cart/$id');
+      }
+    } on DioException catch (e) {
+      final message = e.response?.data['message'] ?? 'Failed to remove item(s) from cart';
+      throw Exception(message);
+    } catch (e) {
+      appLogger.e('Error removing from cart: $e');
       rethrow;
     }
   }

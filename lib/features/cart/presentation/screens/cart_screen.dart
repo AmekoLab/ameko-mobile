@@ -9,6 +9,9 @@ import 'package:ameko_app/features/cart/domain/entities/cart_entity.dart';
 import 'package:ameko_app/features/cart/presentation/bloc/cart_bloc.dart';
 import 'package:ameko_app/features/cart/presentation/bloc/cart_event.dart';
 import 'package:ameko_app/features/cart/presentation/bloc/cart_state.dart';
+import 'package:ameko_app/features/payment/presentation/bloc/checkout/checkout_bloc.dart';
+import 'package:ameko_app/features/payment/presentation/bloc/checkout/checkout_event.dart';
+import 'package:ameko_app/features/payment/presentation/bloc/checkout/checkout_state.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -29,6 +32,14 @@ class _CartScreenState extends State<CartScreen> {
         _selectedItems.add(id);
       }
     });
+    // Update voucher preview if any vouchers are selected
+    _updateVoucherPreview();
+  }
+
+  void _updateVoucherPreview() {
+    final checkoutBloc = context.read<CheckoutBloc>();
+    // Call preview calculation regardless of voucher selection to sync with backend prices
+    checkoutBloc.add(CalculatePreview(_selectedItems.toList()));
   }
 
   void _toggleSelectAll(List<CartItemEntity> items) {
@@ -39,6 +50,7 @@ class _CartScreenState extends State<CartScreen> {
         _selectedItems.addAll(items.map((e) => e.orderItemId));
       }
     });
+    _updateVoucherPreview();
   }
 
   Future<void> _showQuantityDialog(CartItemEntity item) async {
@@ -114,13 +126,32 @@ class _CartScreenState extends State<CartScreen> {
           ),
         ],
       ),
-      body: BlocBuilder<CartBloc, CartState>(
-        builder: (context, state) {
-          if (state.status == CartStatus.loading) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.primary));
-          }
+      body: MultiBlocListener(
+        listeners: [
+          BlocListener<CartBloc, CartState>(
+            listenWhen: (prev, curr) => prev.status != curr.status && curr.status == CartStatus.success,
+            listener: (context, state) {
+              if (_selectedItems.isNotEmpty) {
+                _updateVoucherPreview();
+              }
+            },
+          ),
+          BlocListener<CheckoutBloc, CheckoutState>(
+            listenWhen: (prev, curr) => prev.message != curr.message && curr.message != null,
+            listener: (context, state) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.message!)),
+              );
+            },
+          ),
+        ],
+        child: BlocBuilder<CartBloc, CartState>(
+          builder: (context, state) {
+            if (state.status == CartStatus.loading) {
+              return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+            }
 
-          final cart = state.cart;
+            final cart = state.cart;
           if (cart == null || cart.items.isEmpty) {
             return _buildEmptyCart();
           }
@@ -146,8 +177,9 @@ class _CartScreenState extends State<CartScreen> {
           );
         },
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildShopSection(List<CartItemEntity> items) {
     final shopName = items.first.shopName;
@@ -183,15 +215,74 @@ class _CartScreenState extends State<CartScreen> {
                 const Icon(Icons.chevron_right, size: 18, color: AppColors.textHint),
                 const Spacer(),
                 if (!_isEditMode)
-                  TextButton(
-                    onPressed: () {},
-                    child: Text('Edit', style: AppTextStyles.caption.copyWith(color: AppColors.textHint)),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, size: 20, color: AppColors.textHint),
+                    onPressed: () {
+                      // Delete all items from this shop
+                      context.read<CartBloc>().add(
+                        RemoveCartItems(items.map((e) => e.orderItemId).toList()),
+                      );
+                    },
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                   ),
               ],
             ),
           ),
           const Divider(height: 1, color: AppColors.divider),
           ...items.map((item) => _buildCartItem(item)),
+          
+          // Shop Voucher Row for this shop
+          BlocBuilder<CheckoutBloc, CheckoutState>(
+            builder: (context, state) {
+              final shopId = items.first.shopId;
+              final selectedCode = state.appliedShopVoucherCodes[shopId];
+              
+              // Find shop preview for this shop to show discounts/shipping
+              final shopPreview = state.shopPreviews.isEmpty 
+                  ? null 
+                  : state.shopPreviews.firstWhere((p) => p.shopId == shopId, orElse: () => null as dynamic);
+
+              final formatter = NumberFormat('#,###', 'vi_VN');
+
+              return Column(
+                children: [
+                  if (shopPreview != null && (shopPreview.shopDiscountAmount > 0 || shopPreview.shippingFee > 0))
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      child: Column(
+                        children: [
+                          if (shopPreview.shopDiscountAmount > 0)
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Shop Discount', style: AppTextStyles.caption.copyWith(color: Colors.red)),
+                                Text('-${formatter.format(shopPreview.shopDiscountAmount.toInt())}đ', 
+                                    style: AppTextStyles.caption.copyWith(color: Colors.red)),
+                              ],
+                            ),
+                          if (shopPreview.shippingFee > 0)
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Shipping Fee', style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+                                Text('+${formatter.format(shopPreview.shippingFee.toInt())}đ', 
+                                    style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+                              ],
+                            ),
+                        ],
+                      ),
+                    ),
+                  _buildVoucherRow(
+                    'Lưu Voucher của Shop',
+                    selectedCode ?? 'Thêm mã giảm giá',
+                    Icons.confirmation_number_outlined,
+                    onTap: () => _showVoucherBottomSheet(context, showSystem: false, shopId: shopId),
+                  ),
+                ],
+              );
+            },
+          ),
         ],
       ),
     );
@@ -312,6 +403,14 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   Widget _buildBottomSection(CartEntity cart) {
+    return BlocBuilder<CheckoutBloc, CheckoutState>(
+      builder: (context, state) {
+        return _buildBottomSectionContent(cart, state);
+      },
+    );
+  }
+
+  Widget _buildBottomSectionContent(CartEntity cart, CheckoutState state) {
     final formatter = NumberFormat('#,###', 'vi_VN');
     final selectedCount = _selectedItems.length;
     final allSelected = cart.items.isNotEmpty && selectedCount == cart.items.length;
@@ -330,10 +429,13 @@ class _CartScreenState extends State<CartScreen> {
       ),
       child: Column(
         children: [
-          // Vouchers Row
-          _buildVoucherRow('Shop Voucher', 'Add or enter code', Icons.confirmation_number_outlined),
-          const Divider(height: 1, color: AppColors.divider),
-          _buildVoucherRow('Ameko Voucher', 'Select or enter code', Icons.local_activity_outlined),
+          // Ameko Voucher Row (Only System)
+          _buildVoucherRow(
+            'Ameko Voucher',
+            state.appliedSystemVoucherCode != null ? 'Đã áp dụng: ${state.appliedSystemVoucherCode}' : 'Chọn mã giảm giá Ameko',
+            Icons.local_activity_outlined,
+            onTap: () => _showVoucherBottomSheet(context, showShop: false),
+          ),
           const Divider(height: 1, color: AppColors.divider),
           
           if (!_isEditMode)
@@ -368,11 +470,21 @@ class _CartScreenState extends State<CartScreen> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    if (selectedCount > 0 && state.shippingFee > 0)
+                      Text(
+                        '+${formatter.format(state.shippingFee.toInt())}đ Ship',
+                        style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+                      ),
+                    if (selectedCount > 0 && state.discountAmount > 0)
+                      Text(
+                        '-${formatter.format(state.discountAmount.toInt())}đ Discount',
+                        style: AppTextStyles.caption.copyWith(color: Colors.red),
+                      ),
                     Row(
                       children: [
                         Text('Total ', style: AppTextStyles.bodySecondary),
                         Text(
-                          '${formatter.format(selectedTotal.toInt())}đ',
+                          '${formatter.format((selectedCount > 0 ? state.calculatedTotalAmount : 0.0).toInt())}đ',
                           style: AppTextStyles.titleMedium.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -385,6 +497,8 @@ class _CartScreenState extends State<CartScreen> {
                     context.push('/checkout', extra: {
                       'itemIds': _selectedItems.toList(),
                       'total': selectedTotal,
+                      'systemVoucherCode': state.appliedSystemVoucherCode,
+                      'shopVoucherCodes': state.appliedShopVoucherCodes,
                     });
                   } : null,
                   child: Container(
@@ -417,19 +531,168 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget _buildVoucherRow(String label, String hint, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          Icon(icon, color: AppColors.primary, size: 20),
-          const SizedBox(width: 12),
-          Text(label, style: AppTextStyles.body),
-          const Spacer(),
-          Text(hint, style: AppTextStyles.caption.copyWith(color: AppColors.textHint)),
-          const Icon(Icons.chevron_right, color: AppColors.textHint, size: 18),
-        ],
+  Widget _buildVoucherRow(String label, String hint, IconData icon, {VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Icon(icon, color: AppColors.primary, size: 20),
+            const SizedBox(width: 12),
+            Text(label, style: AppTextStyles.body),
+            const Spacer(),
+            Text(hint, style: AppTextStyles.caption.copyWith(color: AppColors.textHint)),
+            const Icon(Icons.chevron_right, color: AppColors.textHint, size: 18),
+          ],
+        ),
       ),
+    );
+  }
+
+  void _showVoucherBottomSheet(BuildContext context, {bool showSystem = true, bool showShop = true, String? shopId}) {
+    if (_selectedItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng chọn sản phẩm trước khi áp dụng Voucher')),
+      );
+      return;
+    }
+
+    final checkoutBloc = context.read<CheckoutBloc>();
+    checkoutBloc.add(FetchApplicableVouchers());
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) {
+        return BlocProvider.value(
+          value: checkoutBloc,
+          child: DraggableScrollableSheet(
+            initialChildSize: 0.8,
+            maxChildSize: 0.9,
+            minChildSize: 0.5,
+            builder: (_, scrollController) {
+              return Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 16),
+                    Text(
+                      shopId != null ? 'Voucher của Shop' : (showShop && !showSystem ? 'Shop Vouchers' : (showSystem && !showShop ? 'Ameko Vouchers' : 'Chọn Voucher')),
+                      style: AppTextStyles.titleMedium,
+                    ),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: BlocBuilder<CheckoutBloc, CheckoutState>(
+                        builder: (context, state) {
+                          if (state.applicableVouchers == null) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+                          final vouchers = state.applicableVouchers!;
+                          
+                          // Filter shop groups if a specific shopId is provided
+                          final filteredShopGroups = shopId != null
+                              ? vouchers.shopVoucherGroups.where((g) => g.shopId == shopId).toList()
+                              : vouchers.shopVoucherGroups;
+
+                          return ListView(
+                            controller: scrollController,
+                            padding: const EdgeInsets.all(16),
+                            children: [
+                              if (showSystem) ...[
+                                if (state.systemVoucherError != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 16),
+                                    child: Text(state.systemVoucherError!,
+                                        style: const TextStyle(color: Colors.red)),
+                                  ),
+                                Text('Voucher của hệ thống', style: AppTextStyles.titleSmall),
+                                ...vouchers.systemVouchers.map((v) {
+                                  final isSelected = state.appliedSystemVoucherCode == v.code;
+                                  return CheckboxListTile(
+                                    title: Text(v.code),
+                                    value: isSelected,
+                                    onChanged: (selected) {
+                                      checkoutBloc.add(
+                                        SelectVoucher(
+                                          selectedOrderItemIds: _selectedItems.toList(),
+                                          systemVoucherCode: selected == true ? v.code : null,
+                                          shopVoucherCodes: state.appliedShopVoucherCodes,
+                                        ),
+                                      );
+                                    },
+                                  );
+                                }),
+                                const Divider(),
+                              ],
+                              if (showShop) ...[
+                                if (filteredShopGroups.isEmpty && shopId != null)
+                                  const Center(child: Text('Shop này hiện chưa có Voucher khả dụng')),
+                                if (filteredShopGroups.isNotEmpty) ...[
+                                  Text('Voucher của Shop', style: AppTextStyles.titleSmall),
+                                  ...filteredShopGroups.map((g) {
+                                    return Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(vertical: 8),
+                                          child: Text(g.shopName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                        ),
+                                        ...g.vouchers.map((v) {
+                                          final isSelected = state.appliedShopVoucherCodes[g.shopId] == v.code;
+                                          return CheckboxListTile(
+                                            title: Text(v.code),
+                                            value: isSelected,
+                                            onChanged: (selected) {
+                                              final newShopVouchers = Map<String, String>.from(state.appliedShopVoucherCodes);
+                                              if (selected == true) {
+                                                newShopVouchers[g.shopId] = v.code;
+                                              } else {
+                                                newShopVouchers.remove(g.shopId);
+                                              }
+                                              checkoutBloc.add(
+                                                SelectVoucher(
+                                                  selectedOrderItemIds: _selectedItems.toList(),
+                                                  systemVoucherCode: state.appliedSystemVoucherCode,
+                                                  shopVoucherCodes: newShopVouchers,
+                                                ),
+                                              );
+                                            },
+                                          );
+                                        })
+                                      ],
+                                    );
+                                  }),
+                                ],
+                              ],
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                    SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Xong'),
+                          ),
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 

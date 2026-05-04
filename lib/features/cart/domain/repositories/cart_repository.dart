@@ -8,4 +8,5 @@ abstract class CartRepository {
     bool isCustom = false,
   });
   Future<void> updateCartItemQuantity(String itemId, int quantity);
+  Future<void> removeFromCart(List<String> itemIds);
 }

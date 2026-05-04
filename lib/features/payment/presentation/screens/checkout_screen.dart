@@ -16,11 +16,15 @@ import 'package:ameko_app/features/payment/presentation/widgets/payment_method_s
 class CheckoutScreen extends StatefulWidget {
   final List<String> selectedOrderItemIds;
   final double totalAmount;
+  final String? initialSystemVoucherCode;
+  final Map<String, String>? initialShopVoucherCodes;
 
   const CheckoutScreen({
     super.key,
     required this.selectedOrderItemIds,
     required this.totalAmount,
+    this.initialSystemVoucherCode,
+    this.initialShopVoucherCodes,
   });
 
   @override
@@ -39,6 +43,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   void initState() {
     super.initState();
     context.read<WalletBloc>().add(FetchWallet());
+    
+    // Initialize vouchers from Cart if any
+    if (widget.initialSystemVoucherCode != null || (widget.initialShopVoucherCodes?.isNotEmpty ?? false)) {
+      context.read<CheckoutBloc>().add(SelectVoucher(
+        selectedOrderItemIds: widget.selectedOrderItemIds,
+        systemVoucherCode: widget.initialSystemVoucherCode,
+        shopVoucherCodes: widget.initialShopVoucherCodes,
+      ));
+    }
   }
 
   @override
@@ -99,23 +112,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final formatter = NumberFormat('#,###', 'vi_VN');
 
     return BlocListener<CheckoutBloc, CheckoutState>(
+      listenWhen: (previous, current) =>
+          previous.status != current.status ||
+          (current.message != null && current.message != previous.message),
       listener: (context, state) {
-        if (state is CheckoutVnpayReady) {
+        if (state.status == CheckoutStatus.vnpayReady && state.paymentUrl != null) {
           context.push('/payment/vnpay-webview', extra: {
             'paymentUrl': state.paymentUrl,
             'checkoutBloc': context.read<CheckoutBloc>(),
           });
-        }
- else if (state is CheckoutSuccess) {
+        } else if (state.status == CheckoutStatus.success && state.result != null) {
           context.pushReplacement('/payment/result', extra: {
             'success': true,
-            'paymentMethod': state.result.paymentMethod,
-            'message': state.result.message ?? 'Đặt hàng thành công!',
+            'paymentMethod': state.result!.paymentMethod,
+            'message': state.result!.message ?? 'Đặt hàng thành công!',
           });
-        } else if (state is CheckoutFailure) {
+        } else if (state.status == CheckoutStatus.failure && state.message != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(state.message),
+              content: Text(state.message!),
               backgroundColor: Colors.red[700],
               behavior: SnackBarBehavior.floating,
             ),
@@ -215,29 +230,116 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
                 const SizedBox(height: 16),
 
+                // ─── Voucher Section ───────────────────────────────
+                _buildSection(
+                  title: 'Voucher & Khuyến mãi',
+                  icon: Icons.local_activity_outlined,
+                  child: BlocBuilder<CheckoutBloc, CheckoutState>(
+                    builder: (context, state) {
+                      final hasSystemVoucher = state.appliedSystemVoucherCode != null;
+                      final hasShopVoucher = state.appliedShopVoucherCodes.isNotEmpty;
+                      
+                      int selectedCount = 0;
+                      if (hasSystemVoucher) selectedCount++;
+                      selectedCount += state.appliedShopVoucherCodes.length;
+
+                      return InkWell(
+                        onTap: () => _showVoucherBottomSheet(context),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: AppColors.primary.withOpacity(0.5)),
+                            borderRadius: BorderRadius.circular(8),
+                            color: AppColors.primary.withOpacity(0.05),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.confirmation_num_outlined, color: AppColors.primary, size: 20),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  selectedCount > 0
+                                      ? 'Đã chọn $selectedCount voucher'
+                                      : 'Chọn hoặc nhập mã khuyến mãi',
+                                  style: AppTextStyles.body.copyWith(
+                                    color: selectedCount > 0 ? AppColors.primary : AppColors.textSecondary,
+                                    fontWeight: selectedCount > 0 ? FontWeight.bold : FontWeight.normal,
+                                  ),
+                                ),
+                              ),
+                              const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 16),
+
                 // ─── Order Summary ───────────────────────────────
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Tổng thanh toán',
-                          style: AppTextStyles.body.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary)),
-                      Text(
-                        '${formatter.format(widget.totalAmount.toInt())}đ',
-                        style: AppTextStyles.titleMedium.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold),
+                BlocBuilder<CheckoutBloc, CheckoutState>(
+                  builder: (context, state) {
+                    final isVoucherApplied = state.appliedSystemVoucherCode != null || state.appliedShopVoucherCodes.isNotEmpty;
+                    final finalTotal = isVoucherApplied ? (state.calculatedTotalAmount ?? widget.totalAmount) : widget.totalAmount;
+                    
+                    return Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.border),
                       ),
-                    ],
-                  ),
+                      child: Column(
+                        children: [
+                          if (isVoucherApplied && state.discountAmount > 0) ...[
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Tạm tính',
+                                    style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),
+                                Text(
+                                  '${formatter.format(widget.totalAmount.toInt())}đ',
+                                  style: AppTextStyles.body.copyWith(color: AppColors.textPrimary),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Giảm giá Voucher',
+                                    style: AppTextStyles.body.copyWith(color: AppColors.textSecondary)),
+                                Text(
+                                  '- ${formatter.format(state.discountAmount.toInt())}đ',
+                                  style: AppTextStyles.body.copyWith(color: Colors.red),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            const Divider(),
+                            const SizedBox(height: 12),
+                          ],
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Tổng thanh toán',
+                                  style: AppTextStyles.body.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textPrimary)),
+                              Text(
+                                '${formatter.format(finalTotal.toInt())}đ',
+                                style: AppTextStyles.titleMedium.copyWith(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 80),
               ],
@@ -329,7 +431,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Widget _buildBottomBar(BuildContext context, NumberFormat formatter) {
     return BlocBuilder<CheckoutBloc, CheckoutState>(
       builder: (context, state) {
-        final isLoading = state is CheckoutLoading;
+        final isVoucherApplied = state.appliedSystemVoucherCode != null || state.appliedShopVoucherCodes.isNotEmpty;
+        final finalTotal = isVoucherApplied ? (state.calculatedTotalAmount ?? widget.totalAmount) : widget.totalAmount;
+        final isLoading = state.status == CheckoutStatus.loading;
         return Container(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           decoration: const BoxDecoration(
@@ -358,10 +462,134 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   : Text(
                       _paymentMethod == PaymentMethod.vnpay
                           ? 'Thanh toán với VNPAY'
-                          : 'Thanh toán với Ví (${formatter.format(widget.totalAmount.toInt())}đ)',
+                          : 'Thanh toán với Ví (${formatter.format(finalTotal.toInt())}đ)',
                       style: AppTextStyles.button.copyWith(color: Colors.white),
                     ),
             ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showVoucherBottomSheet(BuildContext context) {
+    context.read<CheckoutBloc>().add(FetchApplicableVouchers());
+    // Normally we should wait for it to load and display,
+    // or just show a modal that reacts to state.
+    // Assuming the user didn't request a full blown UI for voucher selection,
+    // I will implement a placeholder or simple dialog for now.
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) {
+        return BlocProvider.value(
+          value: context.read<CheckoutBloc>(),
+          child: DraggableScrollableSheet(
+            initialChildSize: 0.8,
+            maxChildSize: 0.9,
+            minChildSize: 0.5,
+            builder: (_, scrollController) {
+              return Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 16),
+                    Text('Chọn Voucher', style: AppTextStyles.titleMedium),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: BlocBuilder<CheckoutBloc, CheckoutState>(
+                        builder: (context, state) {
+                          if (state.applicableVouchers == null) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+                          final vouchers = state.applicableVouchers!;
+                          return ListView(
+                            controller: scrollController,
+                            padding: const EdgeInsets.all(16),
+                            children: [
+                              if (state.systemVoucherError != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  child: Text(state.systemVoucherError!,
+                                      style: TextStyle(color: Colors.red)),
+                                ),
+                              Text('Voucher của hệ thống', style: AppTextStyles.titleSmall),
+                              ...vouchers.systemVouchers.map((v) {
+                                final isSelected = state.appliedSystemVoucherCode == v.code;
+                                return CheckboxListTile(
+                                  title: Text(v.code),
+                                  value: isSelected,
+                                  onChanged: (selected) {
+                                    context.read<CheckoutBloc>().add(
+                                      SelectVoucher(
+                                        selectedOrderItemIds: widget.selectedOrderItemIds,
+                                        systemVoucherCode: selected == true ? v.code : null,
+                                        shopVoucherCodes: state.appliedShopVoucherCodes,
+                                      ),
+                                    );
+                                  },
+                                );
+                              }),
+                              const Divider(),
+                              Text('Voucher của Shop', style: AppTextStyles.titleSmall),
+                              ...vouchers.shopVoucherGroups.map((g) {
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      child: Text(g.shopName, style: TextStyle(fontWeight: FontWeight.bold)),
+                                    ),
+                                    ...g.vouchers.map((v) {
+                                      final isSelected = state.appliedShopVoucherCodes[g.shopId] == v.code;
+                                      return CheckboxListTile(
+                                        title: Text(v.code),
+                                        value: isSelected,
+                                        onChanged: (selected) {
+                                          final newShopVouchers = Map<String, String>.from(state.appliedShopVoucherCodes);
+                                          if (selected == true) {
+                                            newShopVouchers[g.shopId] = v.code;
+                                          } else {
+                                            newShopVouchers.remove(g.shopId);
+                                          }
+                                          context.read<CheckoutBloc>().add(
+                                            SelectVoucher(
+                                              selectedOrderItemIds: widget.selectedOrderItemIds,
+                                              systemVoucherCode: state.appliedSystemVoucherCode,
+                                              shopVoucherCodes: newShopVouchers,
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    })
+                                  ],
+                                );
+                              }),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                    SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Xong'),
+                          ),
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+              );
+            },
           ),
         );
       },

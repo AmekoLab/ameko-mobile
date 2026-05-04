@@ -3,6 +3,7 @@ import 'package:ameko_app/core/errors/failures.dart';
 import 'package:ameko_app/features/payment/domain/entities/checkout_result_entity.dart';
 import 'package:ameko_app/features/payment/domain/entities/wallet_entity.dart';
 import 'package:ameko_app/features/payment/domain/entities/wallet_transaction_entity.dart';
+import 'package:ameko_app/features/payment/domain/entities/voucher_entity.dart';
 
 abstract class PaymentRepository {
   /// Checkout with VNPAY — returns a paymentUrl to open in WebView
@@ -12,6 +13,8 @@ abstract class PaymentRepository {
     required String receiverName,
     required String receiverPhone,
     String? shippingNote,
+    String? appliedSystemVoucherCode,
+    Map<String, String>? appliedShopVoucherCodes,
   });
 
   /// Checkout with Wallet — requires 6-digit PIN; returns success or failure
@@ -22,6 +25,8 @@ abstract class PaymentRepository {
     required String receiverPhone,
     required String walletPin,
     String? shippingNote,
+    String? appliedSystemVoucherCode,
+    Map<String, String>? appliedShopVoucherCodes,
   });
 
   /// Called after WebView redirect; sends all vnp_* query params for server-side verification
@@ -41,4 +46,14 @@ abstract class PaymentRepository {
 
   /// Request a VNPAY deposit link for topping up the wallet
   Future<Either<Failure, String>> deposit(double amount);
+
+  /// Get applicable vouchers for the current cart/checkout
+  Future<Either<Failure, ApplicableVoucherResponseEntity>> getApplicableVouchers();
+
+  /// Calculate preview prices with vouchers
+  Future<Either<Failure, CalculatePreviewResponseEntity>> calculatePreview({
+    required List<String> selectedOrderItemIds,
+    String? appliedSystemVoucherCode,
+    Map<String, String>? appliedShopVoucherCodes,
+  });
 }
