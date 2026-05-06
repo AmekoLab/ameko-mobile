@@ -45,7 +45,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   void _submit(BuildContext context) {
     final code = _otpCode;
     if (code.length != _otpLength) {
-      AppSnackBar.showError(context, message: 'Please enter the complete 6-digit code.');
+      AppSnackBar.showError(context, message: 'Vui lòng nhập đầy đủ mã 6 số.');
       return;
     }
 
@@ -102,10 +102,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       ),
                     ),
                     AppSpacing.v24,
-                    Text('Reset Password', style: AppTextStyles.heading),
+                    Text('Đặt lại mật khẩu', style: AppTextStyles.heading),
                     AppSpacing.v8,
                     Text(
-                      'Enter the 6-digit code sent to ${widget.email}\nand your new password.',
+                      'Nhập mã 6 số đã được gửi tới ${widget.email}\nvà mật khẩu mới của bạn.',
                       style: AppTextStyles.bodySecondary,
                       textAlign: TextAlign.center,
                     ),
@@ -114,7 +114,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     AppSpacing.v32,
                     AppTextField(
                       name: 'newPassword',
-                      hint: 'New Password',
+                      hint: 'Mật khẩu mới',
                       isPassword: true,
                       prefixIcon: const Icon(
                         Icons.lock_outline,
@@ -126,7 +126,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     AppSpacing.v16,
                     AppTextField(
                       name: 'confirmPassword',
-                      hint: 'Confirm Password',
+                      hint: 'Xác nhận mật khẩu',
                       isPassword: true,
                       prefixIcon: const Icon(
                         Icons.lock_reset_outlined,
@@ -140,7 +140,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     ),
                     AppSpacing.v24,
                     AppButton(
-                      text: 'Reset Password',
+                      text: 'Đặt lại mật khẩu',
                       onPressed: () => _submit(context),
                       isLoading: isLoading,
                       enabled: !isLoading,
@@ -148,7 +148,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     AppSpacing.v20,
                     TextButton(
                       onPressed: () => context.go(AppRouter.login),
-                      child: Text('Back to Sign In', style: AppTextStyles.link),
+                      child: Text('Quay lại Đăng nhập', style: AppTextStyles.link),
                     ),
                   ],
                 ),

@@ -183,7 +183,7 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
                           child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                         )
                         : Text(
-                            'Nạp tiền qua Stripe',
+                            'Nạp tiền qua VNPay',
                             style: AppTextStyles.button.copyWith(color: Colors.white),
                           ),
                   ),
@@ -210,7 +210,7 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                'Giao dịch được thực hiện an toàn qua cổng thanh toán Stripe. Tiền sẽ được cộng vào ví ngay sau khi thanh toán thành công.',
+                'Giao dịch được thực hiện an toàn qua cổng thanh toán VNPay. Tiền sẽ được cộng vào ví ngay sau khi thanh toán thành công.',
                 style: AppTextStyles.caption.copyWith(color: Colors.blue[800], height: 1.4),
               ),
             ),

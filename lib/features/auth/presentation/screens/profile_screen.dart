@@ -68,7 +68,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           _buildProfileHeader(
                               user.fullName ?? user.username,
                               user.email,
-                              user.role ?? 'User'),
+                              user.role ?? 'Người dùng'),
                           const SizedBox(height: 24),
                           _buildWalletCard(context),
                           const SizedBox(height: 24),
@@ -95,7 +95,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       floating: true,
       backgroundColor: AppColors.background,
       elevation: 0,
-      title: Text(l10n.profile, style: AppTextStyles.headingMedium),
+      title: Text('Cá nhân', style: AppTextStyles.headingMedium),
       centerTitle: true,
     );
   }
@@ -125,7 +125,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               child: Center(
                 child: Text(
-                  name.isNotEmpty ? name[0].toUpperCase() : 'U',
+                  name.isNotEmpty ? name[0].toUpperCase() : 'N',
                   style: AppTextStyles.heading.copyWith(
                     color: Colors.white,
                     fontSize: 40,
@@ -163,7 +163,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
-            role.toUpperCase(),
+            (role.toLowerCase() == 'shop' ? 'CỬA HÀNG' : 'NGƯỜI DÙNG'),
             style: AppTextStyles.caption.copyWith(
               color: AppColors.primary,
               fontWeight: FontWeight.bold,
@@ -273,37 +273,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           _buildMenuItem(
             icon: Icons.person_outline,
-            title: 'Account Settings',
+            title: 'Thiết lập tài khoản',
             onTap: () => context.push(AppRouter.editProfile),
           ),
           _buildDivider(),
           _buildMenuItem(
             icon: Icons.lock_outline,
-            title: 'Change Password',
+            title: 'Đổi mật khẩu',
             onTap: () => context.push(AppRouter.changePassword),
           ),
           _buildDivider(),
           _buildMenuItem(
             icon: Icons.shopping_bag_outlined,
-            title: l10n.orders,
+            title: 'Đơn hàng',
             onTap: () => context.push('/orders'),
           ),
           _buildDivider(),
           _buildMenuItem(
             icon: Icons.language,
-            title: l10n.language,
+            title: 'Ngôn ngữ',
             onTap: () => _showLanguagePicker(context, l10n),
           ),
           _buildDivider(),
           _buildMenuItem(
             icon: Icons.notifications_none,
-            title: 'Notifications',
+            title: 'Thông báo',
             onTap: () {},
           ),
           _buildDivider(),
           _buildMenuItem(
             icon: Icons.help_outline,
-            title: 'Help Center',
+            title: 'Trung tâm hỗ trợ',
             onTap: () {},
           ),
         ],
@@ -323,11 +323,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(l10n.selectLanguage, style: AppTextStyles.titleMedium),
+              Text('Chọn ngôn ngữ', style: AppTextStyles.titleMedium),
               const SizedBox(height: 16),
               ListTile(
                 leading: const Text('🇺🇸', style: TextStyle(fontSize: 24)),
-                title: Text(l10n.english),
+                title: const Text('Tiếng Anh'),
                 trailing: BlocBuilder<LocaleBloc, LocaleState>(
                   builder: (context, state) => state.locale.languageCode == 'en'
                       ? const Icon(Icons.check_circle, color: AppColors.primary)
@@ -340,7 +340,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               ListTile(
                 leading: const Text('🇻🇳', style: TextStyle(fontSize: 24)),
-                title: Text(l10n.vietnamese),
+                title: const Text('Tiếng Việt'),
                 trailing: BlocBuilder<LocaleBloc, LocaleState>(
                   builder: (context, state) => state.locale.languageCode == 'vi'
                       ? const Icon(Icons.check_circle, color: AppColors.primary)
@@ -382,12 +382,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: Text(l10n.signOut),
-            content: const Text('Are you sure you want to sign out?'),
+            title: const Text('Đăng xuất'),
+            content: const Text('Bạn có chắc chắn muốn đăng xuất không?'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
+                child: const Text('Hủy'),
               ),
               TextButton(
                 onPressed: () {
@@ -395,7 +395,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   context.read<AuthBloc>().add(const LoggedOut());
                 },
                 style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: Text(l10n.signOut),
+                child: const Text('Đăng xuất'),
               ),
             ],
           ),
@@ -415,7 +415,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const Icon(Icons.logout, color: Colors.redAccent, size: 20),
             const SizedBox(width: 12),
             Text(
-              l10n.signOut,
+              'Đăng xuất',
               style: const TextStyle(
                 color: Colors.redAccent,
                 fontWeight: FontWeight.bold,

@@ -102,7 +102,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                     children: [
                       Text(convo?.otherUserName ?? 'Chat', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
                       Text(
-                        'Online',
+                        'Trực tuyến',
                         style: AppTextStyles.caption.copyWith(
                           color: AppColors.primary,
                           fontWeight: FontWeight.w500,
@@ -198,7 +198,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                 controller: _inputCtrl,
                 style: AppTextStyles.body,
                 decoration: InputDecoration(
-                  hintText: 'Type a message...',
+                  hintText: 'Nhập tin nhắn...',
                   hintStyle: AppTextStyles.body.copyWith(color: AppColors.textHint),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   border: InputBorder.none,

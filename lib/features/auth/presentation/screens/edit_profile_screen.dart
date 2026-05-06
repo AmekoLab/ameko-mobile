@@ -134,7 +134,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                   if (user.role?.toLowerCase() == 'shop') ...[
                     AppSpacing.v32,
-                    Text('Thông tin cửa hàng (Dành cho Shop)', style: AppTextStyles.titleMedium),
+                    Text('Thông tin cửa hàng', style: AppTextStyles.titleMedium),
                     AppSpacing.v16,
                     AppTextField(
                       name: 'storeAddress',

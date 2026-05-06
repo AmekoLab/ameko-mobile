@@ -16,7 +16,7 @@ class OrderDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     if (order == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Order Details')),
+        appBar: AppBar(title: const Text('Chi tiết đơn hàng')),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -29,7 +29,7 @@ class OrderDetailScreen extends StatelessWidget {
         backgroundColor: AppColors.surface,
         elevation: 0.5,
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
-        title: Text('Order Details', style: AppTextStyles.headingMedium),
+        title: Text('Chi tiết đơn hàng', style: AppTextStyles.headingMedium),
         centerTitle: true,
       ),
       bottomNavigationBar: entity.orderStatus.toLowerCase() == 'completed'
@@ -73,15 +73,15 @@ class OrderDetailScreen extends StatelessWidget {
             children: [
               _buildHeader(entity),
               const SizedBox(height: 20),
-              _buildSectionTitle('Shipping Information'),
+              _buildSectionTitle('Thông tin vận chuyển'),
               const SizedBox(height: 12),
               _buildShippingInfo(entity),
               const SizedBox(height: 20),
-              _buildSectionTitle('Order Items'),
+              _buildSectionTitle('Sản phẩm'),
               const SizedBox(height: 12),
               _buildItemsCard(entity),
               const SizedBox(height: 20),
-              _buildSectionTitle('Shop'),
+              _buildSectionTitle('Cửa hàng'),
               const SizedBox(height: 12),
               _buildShopCard(entity),
               const SizedBox(height: 32),
@@ -129,11 +129,11 @@ class OrderDetailScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _infoRow(Icons.person_outline, 'Receiver', order.receiverName),
+          _infoRow(Icons.person_outline, 'Người nhận', order.receiverName),
           const Divider(height: 24),
-          _infoRow(Icons.phone_outlined, 'Phone', order.receiverPhone),
+          _infoRow(Icons.phone_outlined, 'Số điện thoại', order.receiverPhone),
           const Divider(height: 24),
-          _infoRow(Icons.location_on_outlined, 'Address', order.shippingAddress),
+          _infoRow(Icons.location_on_outlined, 'Địa chỉ', order.shippingAddress),
         ],
       ),
     );
@@ -166,16 +166,16 @@ class OrderDetailScreen extends StatelessWidget {
         children: [
           ...order.orderItems.map((item) => _ItemRow(item: item)),
           const Divider(height: 32),
-          _summaryRow('Subtotal', currencyFormat.format(order.subTotal)),
+          _summaryRow('Tạm tính', currencyFormat.format(order.subTotal)),
           const SizedBox(height: 8),
-          _summaryRow('Shipping', currencyFormat.format(order.shippingFee)),
+          _summaryRow('Phí vận chuyển', currencyFormat.format(order.shippingFee)),
           const SizedBox(height: 8),
-          _summaryRow('Discount', '-${currencyFormat.format(order.discountAmount)}', isDiscount: true),
+          _summaryRow('Giảm giá', '-${currencyFormat.format(order.discountAmount)}', isDiscount: true),
           const Divider(height: 32),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Total Amount', style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+              Text('Tổng cộng', style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold)),
               Text(
                 currencyFormat.format(order.totalAmount),
                 style: AppTextStyles.titleMedium.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
@@ -218,7 +218,7 @@ class OrderDetailScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(order.shopName, style: AppTextStyles.titleSmall),
-                Text('View Shop Profiles', style: AppTextStyles.caption.copyWith(color: AppColors.primary)),
+                Text('Xem thông tin Shop', style: AppTextStyles.caption.copyWith(color: AppColors.primary)),
               ],
             ),
           ),

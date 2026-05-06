@@ -101,13 +101,13 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Welcome to Ameko',
+                    'Chào mừng đến với Ameko',
                     textAlign: TextAlign.center,
                     style: AppTextStyles.heading,
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Discover and buy premium custom keyboards\nfrom makers around the world.',
+                    'Khám phá và mua sắm bàn phím tùy chỉnh cao cấp\ntừ các nghệ nhân trên khắp thế giới.',
                     textAlign: TextAlign.center,
                     style: AppTextStyles.bodySecondary,
                   ),
@@ -120,7 +120,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                       size: 18,
                     ),
                     label: Text(
-                      'Skip',
+                      'Bỏ qua',
                       style: AppTextStyles.link,
                     ),
                   ),

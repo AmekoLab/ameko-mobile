@@ -74,17 +74,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     ),
                   ),
                   AppSpacing.v24,
-                  Text('Forgot Password?', style: AppTextStyles.heading),
+                  Text('Quên mật khẩu?', style: AppTextStyles.heading),
                   AppSpacing.v8,
                   Text(
-                    'Enter your email and we\'ll send you\nreset instructions.',
+                    'Nhập email của bạn và chúng tôi sẽ gửi\nhướng dẫn đặt lại mật khẩu.',
                     style: AppTextStyles.bodySecondary,
                     textAlign: TextAlign.center,
                   ),
                   AppSpacing.v32,
                   AppTextField(
                     name: 'email',
-                    hint: 'Email address',
+                    hint: 'Địa chỉ Email',
                     autofocus: true,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.done,
@@ -97,7 +97,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   ),
                   AppSpacing.v24,
                   AppButton(
-                    text: 'Send Reset Link',
+                    text: 'Gửi mã đặt lại',
                     onPressed: () => _submit(context),
                     isLoading: isLoading,
                     enabled: !isLoading,
@@ -105,7 +105,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   AppSpacing.v20,
                   TextButton(
                     onPressed: () => context.go(AppRouter.login),
-                    child: Text('Back to Sign In', style: AppTextStyles.link),
+                    child: Text('Quay lại Đăng nhập', style: AppTextStyles.link),
                   ),
                 ],
               ),

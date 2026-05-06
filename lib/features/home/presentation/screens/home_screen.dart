@@ -69,22 +69,22 @@ class _HomeScreenState extends State<HomeScreen> {
               BottomNavigationBarItem(
                 icon: Icon(Icons.home_outlined),
                 activeIcon: Icon(Icons.home),
-                label: 'Home',
+                label: 'Trang chủ',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.chat_bubble_outline),
                 activeIcon: Icon(Icons.chat_bubble),
-                label: 'Chat',
+                label: 'Tin nhắn',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.shopping_bag_outlined),
                 activeIcon: Icon(Icons.shopping_bag),
-                label: 'Orders',
+                label: 'Đơn hàng',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.person_outline),
                 activeIcon: Icon(Icons.person),
-                label: 'Profile',
+                label: 'Cá nhân',
               ),
             ],
           ),
@@ -116,7 +116,7 @@ class HomeBodyPlaceholder extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Hello, $userName! 👋', style: AppTextStyles.bodySecondary),
+                        Text('Xin chào, $userName! 👋', style: AppTextStyles.bodySecondary),
                         const SizedBox(height: 2),
                         Text(userName, style: AppTextStyles.heading),
                       ],
@@ -148,14 +148,14 @@ class HomeBodyPlaceholder extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Explore Keyboards',
+                        'Khám phá Bàn phím',
                         style: AppTextStyles.headingMedium.copyWith(
                           color: Colors.white,
                         ),
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Find the perfect custom keyboard for you',
+                        'Tìm bàn phím tùy chỉnh hoàn hảo cho bạn',
                         style: AppTextStyles.bodySecondary.copyWith(
                           color: Colors.white70,
                         ),
@@ -171,7 +171,7 @@ class HomeBodyPlaceholder extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          'Shop Now',
+                          'Mua sắm ngay',
                           style: AppTextStyles.label
                               .copyWith(color: AppColors.primary),
                         ),
@@ -180,7 +180,7 @@ class HomeBodyPlaceholder extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
-                Text('Categories', style: AppTextStyles.subheading),
+                Text('Danh mục', style: AppTextStyles.subheading),
                 const SizedBox(height: 16),
                 GridView.count(
                   shrinkWrap: true,
@@ -190,8 +190,8 @@ class HomeBodyPlaceholder extends StatelessWidget {
                   mainAxisSpacing: 12,
                   childAspectRatio: 1.4,
                   children: const [
-                    _CategoryCard(icon: Icons.keyboard, label: 'Keyboards'),
-                    _CategoryCard(icon: Icons.cable, label: 'Cables'),
+                    _CategoryCard(icon: Icons.keyboard, label: 'Bàn phím'),
+                    _CategoryCard(icon: Icons.cable, label: 'Dây cáp'),
                     _CategoryCard(icon: Icons.gamepad, label: 'Switches'),
                     _CategoryCard(icon: Icons.apps, label: 'Keycaps'),
                   ],

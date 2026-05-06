@@ -45,7 +45,7 @@ class _AssembledProductDetailScreenState extends State<AssembledProductDetailScr
       child: BlocListener<CartBloc, CartState>(
         listener: (context, cartState) {
           if (cartState.status == CartStatus.addedSuccessfully) {
-            AppSnackBar.showSuccess(context, message: cartState.message ?? 'Added to cart');
+            AppSnackBar.showSuccess(context, message: cartState.message ?? 'Đã thêm vào giỏ hàng');
           } else if (cartState.status == CartStatus.failure && cartState.error != null) {
             AppSnackBar.showError(context, message: cartState.error!);
           }
@@ -69,11 +69,11 @@ class _AssembledProductDetailScreenState extends State<AssembledProductDetailScr
                     children: [
                       const Icon(Icons.error_outline, size: 48, color: AppColors.error),
                       const SizedBox(height: 12),
-                      Text(state.error ?? 'Could not load product', style: AppTextStyles.bodySecondary),
+                      Text(state.error ?? 'Không thể tải sản phẩm', style: AppTextStyles.bodySecondary),
                       const SizedBox(height: 12),
                       TextButton(
                         onPressed: () => _bloc.add(FetchAssembledProductDetail(widget.productId)),
-                        child: Text('Try again', style: AppTextStyles.link),
+                        child: Text('Thử lại', style: AppTextStyles.link),
                       ),
                     ],
                   ),
@@ -96,7 +96,7 @@ class _AssembledProductDetailScreenState extends State<AssembledProductDetailScr
         .where((u) => u != null && u.isNotEmpty)
         .cast<String>()
         .toList();
-    final formatter = NumberFormat('#,###', 'en_US');
+    final formatter = NumberFormat('#,###', 'vi_VN');
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -237,7 +237,7 @@ class _AssembledProductDetailScreenState extends State<AssembledProductDetailScr
                           Row(
                             children: [
                               _buildBadge(
-                                product.quantity > 0 ? 'In stock' : 'Out of stock',
+                                product.quantity > 0 ? 'Còn hàng' : 'Hết hàng',
                                 product.quantity > 0 ? AppColors.primarySurface : AppColors.error.withValues(alpha: 0.1),
                                 product.quantity > 0 ? AppColors.primary : AppColors.error,
                               ),
@@ -247,7 +247,7 @@ class _AssembledProductDetailScreenState extends State<AssembledProductDetailScr
                           ),
                           const SizedBox(height: 8),
                           if (product.quantity > 0)
-                            Text('Quantity left: ${product.quantity}',
+                            Text('Số lượng còn lại: ${product.quantity}',
                                 style: AppTextStyles.caption),
                         ],
                       ),
@@ -272,7 +272,7 @@ class _AssembledProductDetailScreenState extends State<AssembledProductDetailScr
                               children: [
                                 Text(product.shopName,
                                     style: AppTextStyles.titleSmall),
-                                Text('View Shop', style: AppTextStyles.link.copyWith(fontSize: 12)),
+                                Text('Xem Shop', style: AppTextStyles.link.copyWith(fontSize: 12)),
                               ],
                             ),
                           ),
@@ -327,7 +327,7 @@ class _AssembledProductDetailScreenState extends State<AssembledProductDetailScr
                           side: const BorderSide(color: AppColors.border),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        child: Text('Out of stock', style: AppTextStyles.button.copyWith(color: AppColors.textHint)),
+                        child: Text('Hết hàng', style: AppTextStyles.button.copyWith(color: AppColors.textHint)),
                       ),
                     )
                   : SizedBox(
@@ -363,7 +363,7 @@ class _AssembledProductDetailScreenState extends State<AssembledProductDetailScr
                                 else
                                   const Icon(Icons.shopping_cart_outlined, color: Colors.white, size: 18),
                                 const SizedBox(width: 8),
-                                Text('Add to cart', style: AppTextStyles.button.copyWith(color: Colors.white)),
+                                Text('Thêm vào giỏ hàng', style: AppTextStyles.button.copyWith(color: Colors.white)),
                               ],
                             ),
                           );
@@ -397,7 +397,7 @@ class _AssembledProductDetailScreenState extends State<AssembledProductDetailScr
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Specifications', style: AppTextStyles.titleSmall),
+          Text('Thông số kỹ thuật', style: AppTextStyles.titleSmall),
           const SizedBox(height: 12),
           ...specs.asMap().entries.map((e) => Column(
             children: [
@@ -434,7 +434,7 @@ class _AssembledProductDetailScreenState extends State<AssembledProductDetailScr
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Description', style: AppTextStyles.titleSmall),
+          Text('Mô tả', style: AppTextStyles.titleSmall),
           const SizedBox(height: 10),
           Text(description, style: AppTextStyles.bodySecondary),
         ],
@@ -458,7 +458,7 @@ class _AssembledProductDetailScreenState extends State<AssembledProductDetailScr
             children: [
               const Icon(Icons.build_outlined, color: AppColors.primary, size: 18),
               const SizedBox(width: 8),
-              Text('Build components', style: AppTextStyles.titleSmall),
+              Text('Thành phần cấu tạo', style: AppTextStyles.titleSmall),
             ],
           ),
           const SizedBox(height: 12),

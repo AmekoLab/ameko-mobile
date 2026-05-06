@@ -329,7 +329,7 @@ class AppRouter {
       ],
       errorBuilder: (context, state) => Scaffold(
         body: Center(
-          child: Text('Page not found: ${state.matchedLocation}'),
+          child: Text('Không tìm thấy trang: ${state.matchedLocation}'),
         ),
       ),
     );

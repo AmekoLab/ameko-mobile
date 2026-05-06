@@ -27,12 +27,15 @@ class _OrderListScreenState extends State<OrderListScreen> with TickerProviderSt
   final OrderBloc _orderBloc = sl<OrderBloc>();
 
   final List<String> _shopStatusLabels = [
-    'Pending', 'In Cart', 'Processing', 'Shipped', 
-    'Completed', 'Cancelled', 'Returning', 'Returned', 'Refunded'
+    'Chờ xử lý', 'Đang xử lý', 'Đang giao', 
+    'Hoàn thành', 'Đã hủy', 'Đang trả hàng', 'Đã trả hàng', 'Đã hoàn tiền'
   ];
 
+  // Map shop tab index to actual status ID (skipping 1: InCart)
+  final List<int> _shopStatusIds = [0, 2, 3, 4, 5, 6, 7, 8];
+
   final List<String> _purchasesStatusLabels = [
-    'Processing', 'Completed', 'Cancelled'
+    'Đang xử lý', 'Hoàn thành', 'Đã hủy'
   ];
 
   // Map purchases tab index to actual status ID
@@ -42,7 +45,7 @@ class _OrderListScreenState extends State<OrderListScreen> with TickerProviderSt
   void initState() {
     super.initState();
     _mainTabController = TabController(length: 2, vsync: this);
-    _shopTabController = TabController(length: 9, vsync: this);
+    _shopTabController = TabController(length: 8, vsync: this);
     _purchasesTabController = TabController(length: 3, vsync: this);
     
     _loadData();
@@ -55,7 +58,7 @@ class _OrderListScreenState extends State<OrderListScreen> with TickerProviderSt
     _shopTabController.addListener(() {
       if (_shopTabController.indexIsChanging) return;
       if (_mainTabController.index == 1) {
-        _orderBloc.add(ShopOrdersFetched(status: _shopTabController.index));
+        _orderBloc.add(ShopOrdersFetched(status: _shopStatusIds[_shopTabController.index]));
       }
     });
 
@@ -71,7 +74,7 @@ class _OrderListScreenState extends State<OrderListScreen> with TickerProviderSt
     if (_mainTabController.index == 0) {
       _orderBloc.add(MyOrdersFetched(status: _purchasesStatusIds[_purchasesTabController.index]));
     } else {
-      _orderBloc.add(ShopOrdersFetched(status: _shopTabController.index));
+      _orderBloc.add(ShopOrdersFetched(status: _shopStatusIds[_shopTabController.index]));
     }
   }
 
@@ -100,7 +103,7 @@ class _OrderListScreenState extends State<OrderListScreen> with TickerProviderSt
               iconTheme: const IconThemeData(color: AppColors.textPrimary),
               title: Column(
                 children: [
-                  Text('Orders', style: AppTextStyles.headingMedium),
+                  Text('Đơn hàng', style: AppTextStyles.headingMedium),
                 ],
               ),
               centerTitle: true,
@@ -144,8 +147,8 @@ class _OrderListScreenState extends State<OrderListScreen> with TickerProviderSt
       labelStyle: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
       unselectedLabelColor: AppColors.textSecondary,
       tabs: const [
-        Tab(text: 'Purchases'),
-        Tab(text: 'Shop'),
+        Tab(text: 'Mua sắm'),
+        Tab(text: 'Cửa hàng'),
       ],
     );
   }
@@ -161,9 +164,9 @@ class _OrderListScreenState extends State<OrderListScreen> with TickerProviderSt
           ),
           onSelected: (sort) => context.read<OrderBloc>().add(OrderSortChanged(sort)),
           itemBuilder: (context) => [
-            const PopupMenuItem(value: PriceSort.none, child: Text('Default (Newest)')),
-            const PopupMenuItem(value: PriceSort.lowToHigh, child: Text('Price: Low to High')),
-            const PopupMenuItem(value: PriceSort.highToLow, child: Text('Price: High to Low')),
+            const PopupMenuItem(value: PriceSort.none, child: Text('Mặc định (Mới nhất)')),
+            const PopupMenuItem(value: PriceSort.lowToHigh, child: Text('Giá: Thấp đến Cao')),
+            const PopupMenuItem(value: PriceSort.highToLow, child: Text('Giá: Cao đến Thấp')),
           ],
         );
       },
@@ -266,7 +269,7 @@ class _OrdersView extends StatelessWidget {
           const Icon(Icons.error_outline, size: 48, color: AppColors.error),
           const SizedBox(height: 16),
           Text(message, textAlign: TextAlign.center),
-          TextButton(onPressed: () => _refresh(context), child: const Text('Retry')),
+          TextButton(onPressed: () => _refresh(context), child: const Text('Thử lại')),
         ],
       ),
     );
@@ -280,7 +283,7 @@ class _OrdersView extends StatelessWidget {
           children: [
             Icon(Icons.inventory_2_outlined, size: 60, color: AppColors.textSecondary.withOpacity(0.3)),
             const SizedBox(height: 12),
-            Text('No orders here', style: AppTextStyles.bodySecondary),
+            Text('Chưa có đơn hàng nào', style: AppTextStyles.bodySecondary),
           ],
         ),
       );
@@ -343,7 +346,6 @@ class _MinimalistOrderCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              _StatusBadge(status: order.orderStatus),
             ],
           ),
           const SizedBox(height: 6),
@@ -413,7 +415,7 @@ class _MinimalistOrderCard extends StatelessWidget {
           if (order.orderItems.length > 1)
             Padding(
               padding: const EdgeInsets.only(top: 4),
-              child: Center(child: Text('Extra ${order.orderItems.length - 1} items', style: AppTextStyles.caption.copyWith(fontSize: 10, color: AppColors.textSecondary))),
+              child: Center(child: Text('Thêm ${order.orderItems.length - 1} sản phẩm', style: AppTextStyles.caption.copyWith(fontSize: 10, color: AppColors.textSecondary))),
             ),
 
           const SizedBox(height: 8),

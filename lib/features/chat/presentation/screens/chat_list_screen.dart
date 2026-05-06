@@ -54,7 +54,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         elevation: 0,
-        title: Text('Messages', style: AppTextStyles.subheading.copyWith(fontWeight: FontWeight.bold)),
+        title: Text('Tin nhắn', style: AppTextStyles.subheading.copyWith(fontWeight: FontWeight.bold)),
         centerTitle: false,
         toolbarHeight: 60,
       ),
@@ -65,10 +65,10 @@ class _ChatListScreenState extends State<ChatListScreen> {
               return const Center(child: CircularProgressIndicator());
             }
             if (state.status == ChatListStatus.failure && state.conversations.isEmpty) {
-              return Center(child: Text(state.error ?? 'Error loading chats'));
+              return Center(child: Text(state.error ?? 'Lỗi khi tải tin nhắn'));
             }
             if (state.conversations.isEmpty) {
-              return Center(child: Text('No chats yet', style: AppTextStyles.bodySecondary));
+              return Center(child: Text('Chưa có tin nhắn nào', style: AppTextStyles.bodySecondary));
             }
 
             return ListView.separated(

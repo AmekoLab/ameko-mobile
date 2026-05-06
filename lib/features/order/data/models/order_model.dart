@@ -136,12 +136,18 @@ class OrderListResponse {
   });
 
   factory OrderListResponse.fromJson(Map<String, dynamic> json) {
+    final dataField = json['data'];
+    List listData = [];
+    if (dataField is List) {
+      listData = dataField;
+    } else if (dataField is Map && dataField['items'] is List) {
+      listData = dataField['items'];
+    }
+
     return OrderListResponse(
       success: json['success'] ?? false,
       message: json['message'] ?? '',
-      data: (json['data'] as List? ?? [])
-          .map((e) => OrderModel.fromJson(e))
-          .toList(),
+      data: listData.map((e) => OrderModel.fromJson(e)).toList(),
     );
   }
 }

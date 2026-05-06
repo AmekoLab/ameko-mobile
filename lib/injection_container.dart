@@ -64,7 +64,7 @@ Future<void> setupDependencies() async {
   // ─── Network ──────────────────────────────────────────────────────────────
   final dio = Dio(
     BaseOptions(
-      baseUrl: dotenv.env['BASE_URL'] ?? 'https://localhost:5001/',
+      baseUrl: dotenv.env['BASE_URL'] ?? 'https://10.0.2.2:5001/',
       connectTimeout: const Duration(seconds: 15),
       sendTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 30),

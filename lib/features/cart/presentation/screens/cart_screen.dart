@@ -58,20 +58,20 @@ class _CartScreenState extends State<CartScreen> {
     final newQty = await showDialog<int>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Set Quantity', style: AppTextStyles.titleSmall),
+        title: Text('Cập nhật số lượng', style: AppTextStyles.titleSmall),
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.number,
           autofocus: true,
           decoration: const InputDecoration(
-            labelText: 'Enter number',
+            labelText: 'Nhập số lượng',
             focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.primary)),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+            child: const Text('Hủy', style: TextStyle(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -81,7 +81,7 @@ class _CartScreenState extends State<CartScreen> {
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-            child: const Text('Save', style: TextStyle(color: Colors.white)),
+            child: const Text('Lưu', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -107,7 +107,7 @@ class _CartScreenState extends State<CartScreen> {
           builder: (context, state) {
             final count = state.cart?.items.length ?? 0;
             return Text(
-              'Cart ($count)',
+              'Giỏ hàng ($count)',
               style: AppTextStyles.titleMedium.copyWith(color: AppColors.textPrimary),
             );
           },
@@ -116,7 +116,7 @@ class _CartScreenState extends State<CartScreen> {
           TextButton(
             onPressed: () => setState(() => _isEditMode = !_isEditMode),
             child: Text(
-              _isEditMode ? 'Done' : 'Edit',
+              _isEditMode ? 'Xong' : 'Sửa',
               style: AppTextStyles.body.copyWith(color: AppColors.textPrimary),
             ),
           ),
@@ -167,6 +167,7 @@ class _CartScreenState extends State<CartScreen> {
                 child: ListView(
                   padding: const EdgeInsets.only(top: 8),
                   children: [
+                    _buildSelectAllHeader(cart),
                     ...groupedItems.entries.map((entry) => _buildShopSection(entry.value)),
                     const SizedBox(height: 16),
                   ],
@@ -180,6 +181,30 @@ class _CartScreenState extends State<CartScreen> {
     ),
   );
 }
+
+  Widget _buildSelectAllHeader(CartEntity cart) {
+    final selectedCount = _selectedItems.length;
+    final allSelected = cart.items.isNotEmpty && selectedCount == cart.items.length;
+
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Checkbox(
+            value: allSelected,
+            activeColor: AppColors.primary,
+            onChanged: (val) => _toggleSelectAll(cart.items),
+          ),
+          Text(
+            'Chọn tất cả (${cart.items.length} sản phẩm)',
+            style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildShopSection(List<CartItemEntity> items) {
     final shopName = items.first.shopName;
@@ -256,7 +281,7 @@ class _CartScreenState extends State<CartScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Shop Discount', style: AppTextStyles.caption.copyWith(color: Colors.red)),
+                                Text('Giảm giá từ Shop', style: AppTextStyles.caption.copyWith(color: Colors.red)),
                                 Text('-${formatter.format(shopPreview.shopDiscountAmount.toInt())}đ', 
                                     style: AppTextStyles.caption.copyWith(color: Colors.red)),
                               ],
@@ -265,7 +290,7 @@ class _CartScreenState extends State<CartScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Shipping Fee', style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+                                Text('Phí vận chuyển', style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
                                 Text('+${formatter.format(shopPreview.shippingFee.toInt())}đ', 
                                     style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
                               ],
@@ -431,7 +456,7 @@ class _CartScreenState extends State<CartScreen> {
         children: [
           // Ameko Voucher Row (Only System)
           _buildVoucherRow(
-            'Ameko Voucher',
+            'Voucher Ameko',
             state.appliedSystemVoucherCode != null ? 'Đã áp dụng: ${state.appliedSystemVoucherCode}' : 'Chọn mã giảm giá Ameko',
             Icons.local_activity_outlined,
             onTap: () => _showVoucherBottomSheet(context, showShop: false),
@@ -445,86 +470,109 @@ class _CartScreenState extends State<CartScreen> {
                 children: [
                   const Icon(Icons.stars, color: Colors.orange, size: 16),
                   const SizedBox(width: 4),
-                  Text('Select products to see discounts', style: AppTextStyles.caption),
+                  Text('Chọn sản phẩm để xem khuyến mãi', style: AppTextStyles.caption),
                   const Spacer(),
                   const Icon(Icons.help_outline, size: 14, color: AppColors.textHint),
                 ],
               ),
             ),
           const Divider(height: 1, color: AppColors.divider),
-          Row(
-            children: [
-              Row(
-                children: [
-                  Checkbox(
-                    value: allSelected,
-                    activeColor: AppColors.primary,
-                    onChanged: (val) => _toggleSelectAll(cart.items),
-                  ),
-                  Text('All', style: AppTextStyles.body),
-                ],
-              ),
-              const Spacer(),
-              if (!_isEditMode) ...[
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (selectedCount > 0 && state.shippingFee > 0)
-                      Text(
-                        '+${formatter.format(state.shippingFee.toInt())}đ Ship',
-                        style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
-                      ),
-                    if (selectedCount > 0 && state.discountAmount > 0)
-                      Text(
-                        '-${formatter.format(state.discountAmount.toInt())}đ Discount',
-                        style: AppTextStyles.caption.copyWith(color: Colors.red),
-                      ),
-                    Row(
+          Padding(
+            padding: const EdgeInsets.only(left: 16),
+            child: Row(
+              children: [
+                if (!_isEditMode) ...[
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('Total ', style: AppTextStyles.bodySecondary),
-                        Text(
-                          '${formatter.format((selectedCount > 0 ? state.calculatedTotalAmount : 0.0).toInt())}đ',
-                          style: AppTextStyles.titleMedium.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
+                        if (selectedCount > 0 && (state.shippingFee > 0 || state.discountAmount > 0))
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              if (state.discountAmount > 0)
+                                Text(
+                                  '-${formatter.format(state.discountAmount.toInt())}đ Giảm giá ',
+                                  style: AppTextStyles.caption.copyWith(color: Colors.red),
+                                ),
+                              if (state.shippingFee > 0)
+                                Text(
+                                  '+${formatter.format(state.shippingFee.toInt())}đ Phí ship',
+                                  style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+                                ),
+                            ],
+                          ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text('Tổng cộng ', style: AppTextStyles.bodySecondary),
+                            Flexible(
+                              child: Text(
+                                '${formatter.format((selectedCount > 0 ? state.calculatedTotalAmount : 0.0).toInt())}đ',
+                                style: AppTextStyles.titleMedium.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-                const SizedBox(width: 12),
-                GestureDetector(
-                  onTap: selectedCount > 0 ? () {
-                    context.push('/checkout', extra: {
-                      'itemIds': _selectedItems.toList(),
-                      'total': selectedTotal,
-                      'systemVoucherCode': state.appliedSystemVoucherCode,
-                      'shopVoucherCodes': state.appliedShopVoucherCodes,
-                    });
-                  } : null,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                    color: selectedCount > 0 ? AppColors.primary : AppColors.textHint,
-                    child: Text(
-                      'Check Out ($selectedCount)',
-                      style: AppTextStyles.button.copyWith(color: Colors.white),
+                  ),
+                  const SizedBox(width: 12),
+                  GestureDetector(
+                    onTap: selectedCount > 0
+                        ? () {
+                            context.push('/checkout', extra: {
+                              'itemIds': _selectedItems.toList(),
+                              'total': selectedTotal,
+                              'systemVoucherCode': state.appliedSystemVoucherCode,
+                              'shopVoucherCodes': state.appliedShopVoucherCodes,
+                            });
+                          }
+                        : null,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      decoration: BoxDecoration(
+                        color: selectedCount > 0 ? AppColors.primary : AppColors.textHint,
+                      ),
+                      constraints: const BoxConstraints(minWidth: 120),
+                      alignment: Alignment.center,
+                      child: Text(
+                        'Thanh toán ($selectedCount)',
+                        style: AppTextStyles.button.copyWith(color: Colors.white, fontSize: 14),
+                      ),
                     ),
                   ),
-                ),
-              ] else ...[
-                TextButton(
-                  onPressed: () {},
-                  child: Text('Move to Likes', style: AppTextStyles.body.copyWith(color: AppColors.primary)),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  color: selectedCount > 0 ? AppColors.primary : AppColors.textHint,
-                  child: Text(
-                    'Delete ($selectedCount)',
-                    style: AppTextStyles.button.copyWith(color: Colors.white),
+                ] else ...[
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () {},
+                      child: Text(
+                        'Lưu vào yêu thích',
+                        style: AppTextStyles.body.copyWith(color: AppColors.primary),
+                      ),
+                    ),
                   ),
-                ),
+                  GestureDetector(
+                    onTap: selectedCount > 0 ? () {} : null,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      decoration: BoxDecoration(
+                        color: selectedCount > 0 ? AppColors.primary : AppColors.textHint,
+                      ),
+                      child: Text(
+                        'Xóa ($selectedCount)',
+                        style: AppTextStyles.button.copyWith(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ],
       ),
@@ -703,7 +751,7 @@ class _CartScreenState extends State<CartScreen> {
         children: [
           const Icon(Icons.shopping_cart_outlined, size: 80, color: AppColors.textHint),
           const SizedBox(height: 16),
-          Text('Your cart is empty', style: AppTextStyles.titleMedium.copyWith(color: AppColors.textHint)),
+          Text('Giỏ hàng của bạn đang trống', style: AppTextStyles.titleMedium.copyWith(color: AppColors.textHint)),
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -712,7 +760,7 @@ class _CartScreenState extends State<CartScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
             ),
-            child: Text('SHOP NOW', style: AppTextStyles.button),
+            child: Text('MUA SẮM NGAY', style: AppTextStyles.button),
           ),
         ],
       ),

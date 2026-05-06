@@ -32,7 +32,7 @@ class LocaleBloc extends Bloc<LocaleEvent, LocaleState> {
   final StorageService _storage;
   static const _localeKey = 'app_locale';
 
-  LocaleBloc(this._storage) : super(const LocaleState(Locale('en'))) {
+  LocaleBloc(this._storage) : super(const LocaleState(Locale('vi'))) {
     on<LoadLocale>(_onLoadLocale);
     on<ChangeLocale>(_onChangeLocale);
   }

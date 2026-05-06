@@ -187,7 +187,7 @@ class _AssembledProductListScreenState extends State<AssembledProductListScreen>
                       color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Text('Custom Keyboard',
+                    child: Text('Bàn phím tùy chỉnh',
                         style: AppTextStyles.caption.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
                   ),
                   const SizedBox(height: 10),
@@ -249,11 +249,11 @@ class _AssembledProductListScreenState extends State<AssembledProductListScreen>
                 children: [
                   const Icon(Icons.wifi_off_outlined, size: 48, color: AppColors.textHint),
                   const SizedBox(height: 12),
-                  Text('Could not load products', style: AppTextStyles.bodySecondary),
+                  Text('Không thể tải sản phẩm', style: AppTextStyles.bodySecondary),
                   const SizedBox(height: 12),
                   TextButton(
                     onPressed: () => context.read<AssembledProductListBloc>().add(RefreshAssembledProducts()),
-                    child: Text('Try again', style: AppTextStyles.link),
+                    child: Text('Thử lại', style: AppTextStyles.link),
                   ),
                 ],
               ),
@@ -263,7 +263,7 @@ class _AssembledProductListScreenState extends State<AssembledProductListScreen>
 
         if (state.products.isEmpty) {
           return SliverFillRemaining(
-            child: Center(child: Text('No products found', style: AppTextStyles.bodySecondary)),
+            child: Center(child: Text('Không tìm thấy sản phẩm nào', style: AppTextStyles.bodySecondary)),
           );
         }
 
@@ -316,7 +316,7 @@ class _ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final formatter = NumberFormat('#,###', 'en_US');
+    final formatter = NumberFormat('#,###', 'vi_VN');
 
     return GestureDetector(
       onTap: onTap,
@@ -377,7 +377,7 @@ class _ProductCard extends StatelessWidget {
                             color: AppColors.error,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Text('Out of stock',
+                          child: Text('Hết hàng',
                               style: AppTextStyles.caption.copyWith(color: Colors.white, fontWeight: FontWeight.w700)),
                         ),
                       ),
