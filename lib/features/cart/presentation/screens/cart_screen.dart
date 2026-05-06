@@ -266,7 +266,7 @@ class _CartScreenState extends State<CartScreen> {
               // Find shop preview for this shop to show discounts/shipping
               final shopPreview = state.shopPreviews.isEmpty 
                   ? null 
-                  : state.shopPreviews.firstWhere((p) => p.shopId == shopId, orElse: () => null as dynamic);
+                  : state.shopPreviews.where((p) => p.shopId == shopId).firstOrNull;
 
               final formatter = NumberFormat('#,###', 'vi_VN');
 

@@ -72,11 +72,11 @@ class _VnpayWebviewScreenState extends State<VnpayWebviewScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: Colors.blue[700],
+                color: AppColors.primary,
                 borderRadius: BorderRadius.circular(4),
               ),
               child: const Text(
-                'THANH TOÁN',
+                'PAYMENT',
                 style: TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -85,7 +85,7 @@ class _VnpayWebviewScreenState extends State<VnpayWebviewScreen> {
             ),
             const SizedBox(width: 8),
             Text(
-              'Cổng thanh toán',
+              'Thanh toán an toàn',
               style: AppTextStyles.titleSmall.copyWith(color: AppColors.textPrimary),
             ),
           ],

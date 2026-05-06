@@ -46,14 +46,21 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
             'checkoutBloc': null,
           }).then((result) {
             if (result == true) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Nạp tiền thành công!'), backgroundColor: Colors.green),
-              );
-              context.read<WalletBloc>().add(FetchWallet());
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Nạp tiền thành công!'), backgroundColor: Colors.green),
+                );
+                // Refresh data and go back to Dashboard
+                context.read<WalletBloc>().add(FetchWallet());
+                context.read<WalletBloc>().add(FetchTransactions());
+                Navigator.of(context).pop();
+              }
             } else if (result == false) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Giao dịch đã hủy'), backgroundColor: Colors.orange),
-              );
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Giao dịch đã hủy'), backgroundColor: Colors.orange),
+                );
+              }
             }
           });
         } else if (state is WalletFailure) {
@@ -183,7 +190,7 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
                           child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                         )
                         : Text(
-                            'Nạp tiền qua VNPay',
+                            'Nạp tiền ngay',
                             style: AppTextStyles.button.copyWith(color: Colors.white),
                           ),
                   ),
@@ -210,7 +217,7 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                'Giao dịch được thực hiện an toàn qua cổng thanh toán VNPay. Tiền sẽ được cộng vào ví ngay sau khi thanh toán thành công.',
+                'Giao dịch được thực hiện an toàn qua cổng thanh toán trực tuyến. Tiền sẽ được cộng vào ví ngay sau khi thanh toán thành công.',
                 style: AppTextStyles.caption.copyWith(color: Colors.blue[800], height: 1.4),
               ),
             ),

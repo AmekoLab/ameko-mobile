@@ -416,8 +416,12 @@ class PaymentRepositoryImpl implements PaymentRepository {
   Future<Either<Failure, String>> deposit(double amount) async {
     try {
       final response = await _dio.post(
-        '/api/v1/wallet/deposit',
-        data: {'amount': amount},
+        '/api/v1/wallet/deposit/mobile',
+        data: {
+          'amount': amount,
+          'successUrl': 'ameko://payment/success',
+          'cancelUrl': 'ameko://payment/cancel',
+        },
       );
       final data = response.data['data'] ?? response.data;
       final url = data['url']?.toString() ?? '';
