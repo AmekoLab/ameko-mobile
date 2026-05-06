@@ -11,16 +11,16 @@ abstract class Failure extends Equatable {
 }
 
 class NetworkFailure extends Failure {
-  const NetworkFailure({required super.message});
+  const NetworkFailure({super.message = 'Có lỗi xảy ra khi kết nối mạng'});
 }
 
 class ServerFailure extends Failure {
-  const ServerFailure({required super.message});
+  const ServerFailure({super.message = 'Có lỗi xảy ra từ máy chủ'});
 }
 
 class UnauthorizedFailure extends Failure {
   const UnauthorizedFailure({
-    super.message = 'Session expired. Please login again.',
+    super.message = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
   });
 }
 
@@ -34,18 +34,18 @@ class CacheFailure extends Failure {
 
 class NoInternetFailure extends Failure {
   const NoInternetFailure({
-    super.message = 'No internet connection. Please check your network.',
+    super.message = 'Không có kết nối internet. Vui lòng kiểm tra lại.',
   });
 }
 
 class TimeoutFailure extends Failure {
   const TimeoutFailure({
-    super.message = 'Connection timed out. Please try again.',
+    super.message = 'Kết nối quá hạn. Vui lòng thử lại.',
   });
 }
 
 class UnknownFailure extends Failure {
   const UnknownFailure({
-    super.message = 'An unexpected error occurred. Please try again.',
+    super.message = 'Có lỗi xảy ra. Vui lòng thử lại sau.',
   });
 }

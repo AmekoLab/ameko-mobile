@@ -31,7 +31,7 @@ class CartRepositoryImpl implements CartRepository {
       return CartModel.fromJson(data as Map<String, dynamic>);
     } catch (e) {
       appLogger.e('Error fetching cart: $e');
-      rethrow;
+      throw Exception('Có lỗi xảy ra khi tải giỏ hàng');
     }
   }
 
@@ -54,11 +54,11 @@ class CartRepositoryImpl implements CartRepository {
         throw Exception(response.data['message'] ?? 'Failed to add item to cart');
       }
     } on DioException catch (e) {
-      final message = e.response?.data['message'] ?? 'Failed to add item to cart';
+      final message = e.response?.data['message'] ?? 'Có lỗi xảy ra khi thêm vào giỏ hàng';
       throw Exception(message);
     } catch (e) {
       appLogger.e('Error adding to cart: $e');
-      rethrow;
+      throw Exception('Có lỗi xảy ra. Vui lòng thử lại sau.');
     }
   }
 
@@ -73,11 +73,11 @@ class CartRepositoryImpl implements CartRepository {
         throw Exception(response.data['message'] ?? 'Failed to update item quantity');
       }
     } on DioException catch (e) {
-      final message = e.response?.data['message'] ?? 'Failed to update item quantity';
+      final message = e.response?.data['message'] ?? 'Có lỗi xảy ra khi cập nhật số lượng';
       throw Exception(message);
     } catch (e) {
       appLogger.e('Error updating cart quantity: $e');
-      rethrow;
+      throw Exception('Có lỗi xảy ra. Vui lòng thử lại sau.');
     }
   }
 
@@ -88,11 +88,11 @@ class CartRepositoryImpl implements CartRepository {
         await _dio.delete('/api/v1/orders/cart/$id');
       }
     } on DioException catch (e) {
-      final message = e.response?.data['message'] ?? 'Failed to remove item(s) from cart';
+      final message = e.response?.data['message'] ?? 'Có lỗi xảy ra khi xóa sản phẩm khỏi giỏ hàng';
       throw Exception(message);
     } catch (e) {
       appLogger.e('Error removing from cart: $e');
-      rethrow;
+      throw Exception('Có lỗi xảy ra. Vui lòng thử lại sau.');
     }
   }
 }

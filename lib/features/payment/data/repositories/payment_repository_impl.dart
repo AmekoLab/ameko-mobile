@@ -491,15 +491,20 @@ class PaymentRepositoryImpl implements PaymentRepository {
     if (e.type == DioExceptionType.connectionError) {
       return const NoInternetFailure();
     }
+    
     final response = e.response;
     if (response != null) {
       if (response.statusCode == 401) return const UnauthorizedFailure();
+      
+      // If server provides a message, we can show it, but for any other case, use generic
       final data = response.data;
       if (data is Map) {
         final msg = data['message'] ?? data['msg'] ?? data['error'];
         if (msg != null) return ServerFailure(message: msg.toString());
       }
+      return const ServerFailure();
     }
-    return UnknownFailure(message: e.message ?? 'Unknown error');
+    
+    return const UnknownFailure();
   }
 }

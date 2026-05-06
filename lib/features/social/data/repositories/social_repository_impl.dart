@@ -272,15 +272,19 @@ class SocialRepositoryImpl implements SocialRepository {
     if (e.type == DioExceptionType.connectionError) {
       return const NoInternetFailure();
     }
+    
     final response = e.response;
     if (response != null) {
       if (response.statusCode == 401) return const UnauthorizedFailure();
+      
       final data = response.data;
       if (data is Map) {
         final msg = data['message'] ?? data['msg'] ?? data['error'];
         if (msg != null) return ServerFailure(message: msg.toString());
       }
+      return const ServerFailure();
     }
-    return UnknownFailure(message: e.message ?? 'Unknown error');
+    
+    return const UnknownFailure();
   }
 }

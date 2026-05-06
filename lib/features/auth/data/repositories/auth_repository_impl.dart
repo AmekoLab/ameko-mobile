@@ -352,8 +352,9 @@ class AuthRepositoryImpl implements AuthRepository {
           return ServerFailure(message: apiMessage.toString());
         }
       }
+      return const ServerFailure();
     }
     
-    return UnknownFailure(message: e.message ?? 'Unknown error');
+    return const UnknownFailure();
   }
 }
