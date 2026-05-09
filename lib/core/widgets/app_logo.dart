@@ -21,20 +21,11 @@ class AppLogo extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
+        Image.asset(
+          'assets/images/AmekoLab.png',
           width: size,
           height: size,
-          padding: EdgeInsets.all(size * 0.1),
-          decoration: BoxDecoration(
-            color: AppColors.primarySurface,
-            borderRadius: BorderRadius.circular(size * 0.28),
-          ),
-          child: SvgPicture.asset(
-            'assets/svg/logo.svg',
-            width: size * 0.8,
-            height: size * 0.8,
-            fit: BoxFit.contain,
-          ),
+          fit: BoxFit.contain,
         ),
         if (showName) ...[
           const SizedBox(height: 12),

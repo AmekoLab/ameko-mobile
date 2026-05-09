@@ -21,6 +21,8 @@ class AssembledProductModel extends AssembledProductEntity {
     super.battery,
     required super.isDeleted,
     required super.createdAt,
+    super.rating = 0.0,
+    super.totalReviews = 0,
   });
 
   factory AssembledProductModel.fromJson(Map<String, dynamic> json) {
@@ -44,6 +46,8 @@ class AssembledProductModel extends AssembledProductEntity {
       battery: json['battery']?.toString(),
       isDeleted: json['isDeleted'] == true,
       createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? DateTime.now(),
+      rating: _parseDouble(json['rating']),
+      totalReviews: _parseInt(json['totalReviews']),
     );
   }
 
@@ -84,6 +88,8 @@ class AssembledProductDetailModel extends AssembledProductDetailEntity {
     super.battery,
     required super.isDeleted,
     required super.createdAt,
+    super.rating = 0.0,
+    super.totalReviews = 0,
     required super.details,
   });
 
@@ -110,6 +116,8 @@ class AssembledProductDetailModel extends AssembledProductDetailEntity {
       battery: base.battery,
       isDeleted: base.isDeleted,
       createdAt: base.createdAt,
+      rating: base.rating,
+      totalReviews: base.totalReviews,
       details: rawDetails
           .map((d) => AssembledProductDetailItem(
                 id: d['id']?.toString() ?? '',

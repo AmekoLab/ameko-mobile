@@ -22,6 +22,9 @@ import 'package:ameko_app/features/chat/presentation/bloc/chat_detail_bloc.dart'
 import 'package:ameko_app/features/assembled_product/data/repositories/assembled_product_repository_impl.dart';
 import 'package:ameko_app/features/assembled_product/domain/repositories/assembled_product_repository.dart';
 import 'package:ameko_app/features/assembled_product/presentation/bloc/assembled_product_list_bloc.dart';
+import 'package:ameko_app/features/assembled_product/presentation/bloc/assembled_product_search_bloc.dart';
+import 'package:ameko_app/features/assembled_product/presentation/bloc/assembled_product_search_event.dart';
+import 'package:ameko_app/features/assembled_product/presentation/bloc/assembled_product_search_state.dart';
 import 'package:ameko_app/features/assembled_product/presentation/bloc/assembled_product_detail_bloc.dart';
 import 'package:ameko_app/features/cart/data/repositories/cart_repository_impl.dart';
 import 'package:ameko_app/features/cart/domain/repositories/cart_repository.dart';
@@ -36,6 +39,10 @@ import 'package:ameko_app/features/social/presentation/bloc/social_feed_bloc.dar
 import 'package:ameko_app/features/social/presentation/bloc/post_detail_bloc.dart';
 import 'package:ameko_app/features/social/data/models/post_model.dart';
 import 'package:ameko_app/features/social/data/services/social_signalr_service.dart';
+import 'package:ameko_app/features/notification/data/repositories/notification_repository_impl.dart';
+import 'package:ameko_app/features/notification/domain/repositories/notification_repository.dart';
+import 'package:ameko_app/features/notification/data/services/notification_signalr_service.dart';
+import 'package:ameko_app/features/notification/presentation/bloc/notification_bloc.dart';
 import 'package:ameko_app/core/bloc/locale_bloc.dart';
 
 final sl = GetIt.instance;
@@ -60,11 +67,12 @@ Future<void> setupDependencies() async {
 
   sl.registerSingleton<ChatService>(ChatService());
   sl.registerSingleton<SocialSignalRService>(SocialSignalRService());
+  sl.registerSingleton<NotificationSignalRService>(NotificationSignalRService());
 
   // ─── Network ──────────────────────────────────────────────────────────────
   final dio = Dio(
     BaseOptions(
-      baseUrl: dotenv.env['BASE_URL'] ?? 'https://10.0.2.2:5001/',
+      baseUrl: dotenv.env['BASE_URL'] ?? 'https://api.amekolab.online/',
       connectTimeout: const Duration(seconds: 15),
       sendTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 30),
@@ -105,6 +113,10 @@ Future<void> setupDependencies() async {
     SocialRepositoryImpl(dio),
   );
 
+  sl.registerSingleton<NotificationRepository>(
+    NotificationRepositoryImpl(dio),
+  );
+
   // ─── BLoCs ────────────────────────────────────────────────────────────────
   sl.registerFactory<AuthBloc>(
     () => AuthBloc(
@@ -143,8 +155,14 @@ Future<void> setupDependencies() async {
     () => AssembledProductListBloc(repository: sl<AssembledProductRepository>()),
   );
 
+
+
   sl.registerFactory<AssembledProductDetailBloc>(
     () => AssembledProductDetailBloc(repository: sl<AssembledProductRepository>()),
+  );
+
+  sl.registerFactory<AssembledProductSearchBloc>(
+    () => AssembledProductSearchBloc(repository: sl<AssembledProductRepository>()),
   );
 
   sl.registerSingleton<CartRepository>(
@@ -173,5 +191,13 @@ Future<void> setupDependencies() async {
 
   sl.registerFactory<LocaleBloc>(
     () => LocaleBloc(sl<StorageService>()),
+  );
+
+  sl.registerFactory<NotificationBloc>(
+    () => NotificationBloc(
+      repository: sl<NotificationRepository>(),
+      signalRService: sl<NotificationSignalRService>(),
+      storageService: sl<StorageService>(),
+    ),
   );
 }

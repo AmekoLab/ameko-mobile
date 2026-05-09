@@ -51,7 +51,7 @@ class CartRepositoryImpl implements CartRepository {
         },
       );
       if (response.data['success'] != true) {
-        throw Exception(response.data['message'] ?? 'Failed to add item to cart');
+        throw Exception(response.data['message'] ?? 'Không thể thêm sản phẩm vào giỏ hàng');
       }
     } on DioException catch (e) {
       final message = e.response?.data['message'] ?? 'Có lỗi xảy ra khi thêm vào giỏ hàng';
@@ -70,7 +70,7 @@ class CartRepositoryImpl implements CartRepository {
         data: {'quantity': quantity},
       );
       if (response.data['success'] != true) {
-        throw Exception(response.data['message'] ?? 'Failed to update item quantity');
+        throw Exception(response.data['message'] ?? 'Không thể cập nhật số lượng sản phẩm');
       }
     } on DioException catch (e) {
       final message = e.response?.data['message'] ?? 'Có lỗi xảy ra khi cập nhật số lượng';

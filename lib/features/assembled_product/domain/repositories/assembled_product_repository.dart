@@ -2,6 +2,20 @@ import 'package:ameko_app/features/assembled_product/domain/entities/assembled_p
 
 abstract class AssembledProductRepository {
   Future<AssembledProductListResponse> getAll({int currentPage = 1, int pageSize = 10, String? keyword});
+  Future<AssembledProductListResponse> search({
+    String? searchTerm,
+    double? minPrice,
+    double? maxPrice,
+    String? layout,
+    String? mounting,
+    String? pcb,
+    String? connection,
+    String? battery,
+    String? shopId,
+    double? minRating,
+    int pageNumber = 1,
+    int pageSize = 10,
+  });
   Future<AssembledProductDetailEntity> getById(String id);
   Future<List<AssembledProductEntity>> getByShop(String shopId);
 }

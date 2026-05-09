@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ameko_app/core/theme/app_colors.dart';
 import 'package:ameko_app/core/theme/app_text_styles.dart';
@@ -8,6 +9,8 @@ import 'package:ameko_app/features/social/presentation/screens/social_feed_scree
 import 'package:ameko_app/features/assembled_product/presentation/screens/assembled_product_list_screen.dart';
 import 'package:ameko_app/features/assembled_product/presentation/bloc/assembled_product_list_bloc.dart';
 import 'package:ameko_app/features/assembled_product/presentation/bloc/assembled_product_list_event.dart';
+import 'package:ameko_app/features/notification/presentation/bloc/notification_bloc.dart';
+import 'package:ameko_app/features/notification/presentation/bloc/notification_state.dart';
 import 'package:ameko_app/injection_container.dart';
 
 class SocialHomeScreen extends StatefulWidget {
@@ -62,7 +65,13 @@ class _SocialHomeScreenState extends State<SocialHomeScreen> with SingleTickerPr
         ),
         actions: [
           IconButton(
-            onPressed: () {},
+            onPressed: () {
+              if (_tabController.index == 2) {
+                context.push('/assembled-products/search');
+              } else {
+                // Handle social search if needed later
+              }
+            },
             icon: const Icon(Icons.search, color: AppColors.primary),
           ),
         ],

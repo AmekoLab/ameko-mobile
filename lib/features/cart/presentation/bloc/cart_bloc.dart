@@ -33,7 +33,7 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       );
       emit(state.copyWith(
         status: CartStatus.addedSuccessfully,
-        message: 'Item added to cart successfully',
+        message: 'Đã thêm sản phẩm vào giỏ hàng',
       ));
       // Re-fetch cart after adding
       add(FetchCart());

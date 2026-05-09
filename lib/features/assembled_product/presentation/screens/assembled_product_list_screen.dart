@@ -80,7 +80,6 @@ class _AssembledProductListScreenState extends State<AssembledProductListScreen>
             child: CustomScrollView(
               controller: _scrollCtrl,
               slivers: [
-                _buildSliverAppBar(context, userName, l10n),
                 _buildFeaturedBanner(l10n),
                 _buildSectionHeader(l10n),
                 _buildProductGrid(l10n),
@@ -93,47 +92,6 @@ class _AssembledProductListScreenState extends State<AssembledProductListScreen>
     );
   }
 
-  Widget _buildSliverAppBar(BuildContext context, String userName, AppLocalizations l10n) {
-    return SliverAppBar(
-      expandedHeight: 80,
-      floating: true,
-      snap: true,
-      backgroundColor: AppColors.surface,
-      elevation: 0,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          color: AppColors.surface,
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text('${l10n.hello} 👋', style: AppTextStyles.bodySecondary),
-                        const SizedBox(height: 2),
-                        Text(userName,
-                            style: AppTextStyles.headingMedium,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => context.push('/cart'),
-                    icon: const Icon(Icons.shopping_cart_outlined, color: AppColors.textSecondary),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildFeaturedBanner(AppLocalizations l10n) {
     return SliverToBoxAdapter(
@@ -192,7 +150,7 @@ class _AssembledProductListScreenState extends State<AssembledProductListScreen>
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    l10n.discoverKeyboards,
+                    'Khám phá Bàn phím Tùy chỉnh',
                     style: AppTextStyles.headingMedium.copyWith(color: Colors.white, height: 1.2),
                   ),
                   const SizedBox(height: 12),
@@ -202,7 +160,7 @@ class _AssembledProductListScreenState extends State<AssembledProductListScreen>
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Text(l10n.exploreNow,
+                    child: Text('Khám phá ngay',
                         style: AppTextStyles.label.copyWith(color: AppColors.primary, fontWeight: FontWeight.w700)),
                   ),
                 ],
@@ -221,10 +179,10 @@ class _AssembledProductListScreenState extends State<AssembledProductListScreen>
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(l10n.featuredProducts, style: AppTextStyles.subheading),
+            Text('Sản phẩm nổi bật', style: AppTextStyles.subheading),
             TextButton(
               onPressed: () {},
-              child: Text(l10n.seeAll, style: AppTextStyles.link),
+              child: Text('Xem tất cả', style: AppTextStyles.link),
             ),
           ],
         ),

@@ -19,6 +19,9 @@ class AssembledProductEntity {
   final bool isDeleted;
   final DateTime createdAt;
 
+  final double rating;
+  final int totalReviews;
+
   const AssembledProductEntity({
     required this.id,
     required this.name,
@@ -39,6 +42,8 @@ class AssembledProductEntity {
     this.battery,
     required this.isDeleted,
     required this.createdAt,
+    this.rating = 0.0,
+    this.totalReviews = 0,
   });
 }
 
@@ -65,6 +70,8 @@ class AssembledProductDetailEntity extends AssembledProductEntity {
     super.battery,
     required super.isDeleted,
     required super.createdAt,
+    super.rating = 0.0,
+    super.totalReviews = 0,
     required this.details,
   });
 }

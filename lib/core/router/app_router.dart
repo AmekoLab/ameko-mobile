@@ -45,6 +45,11 @@ import 'package:ameko_app/features/payment/presentation/screens/pin_change_scree
 import 'package:ameko_app/features/payment/presentation/screens/pin_reset_screen.dart';
 import 'package:ameko_app/features/payment/presentation/screens/wallet_dashboard_screen.dart';
 import 'package:ameko_app/features/payment/presentation/screens/transaction_detail_screen.dart';
+import 'package:ameko_app/features/assembled_product/presentation/screens/assembled_product_search_screen.dart';
+import 'package:ameko_app/features/assembled_product/presentation/bloc/assembled_product_search_bloc.dart';
+import 'package:ameko_app/features/notification/presentation/screens/notification_list_screen.dart';
+import 'package:ameko_app/features/notification/presentation/bloc/notification_bloc.dart';
+import 'package:ameko_app/features/notification/presentation/bloc/notification_event.dart';
 import 'package:ameko_app/injection_container.dart';
 
 class AppRouter {
@@ -150,8 +155,20 @@ class AppRouter {
         // Shell route for bottom nav
         ShellRoute(
           builder: (context, state, child) {
-            return BlocProvider(
-              create: (context) => sl<ChatListBloc>()..add(FetchConversations()),
+            return MultiBlocProvider(
+              providers: [
+                BlocProvider(
+                  create: (context) => sl<ChatListBloc>()..add(FetchConversations()),
+                ),
+                BlocProvider(
+                  create: (context) => sl<NotificationBloc>()
+                    ..add(InitializeSignalR())
+                    ..add(FetchUnreadCount()),
+                ),
+                BlocProvider(
+                  create: (context) => sl<CartBloc>()..add(FetchCart()),
+                ),
+              ],
               child: HomeScreen(child: child),
             );
           },
@@ -206,11 +223,26 @@ class AppRouter {
               path: changePassword,
               builder: (_, __) => const ChangePasswordScreen(),
             ),
+
+
+
+
+            GoRoute(
+              path: '/notifications',
+              builder: (_, __) => const NotificationListScreen(),
+            ),
             GoRoute(
               path: assembledProducts,
               builder: (_, __) => BlocProvider(
                 create: (_) => sl<AssembledProductListBloc>()..add(FetchAssembledProducts()),
                 child: const AssembledProductListScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/assembled-products/search',
+              builder: (context, state) => BlocProvider(
+                create: (_) => sl<AssembledProductSearchBloc>(),
+                child: const AssembledProductSearchScreen(),
               ),
             ),
             GoRoute(
@@ -222,11 +254,8 @@ class AppRouter {
             ),
             GoRoute(
               path: cart,
-              builder: (_, __) => MultiBlocProvider(
-                providers: [
-                  BlocProvider(create: (_) => sl<CartBloc>()..add(FetchCart())),
-                  BlocProvider(create: (_) => sl<CheckoutBloc>()),
-                ],
+              builder: (_, __) => BlocProvider(
+                create: (_) => sl<CheckoutBloc>(),
                 child: const CartScreen(),
               ),
             ),

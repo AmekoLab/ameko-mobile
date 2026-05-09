@@ -120,7 +120,7 @@ class AuthRepositoryImpl implements AuthRepository {
       if (response.data['success'] == true) {
         return const Right(null);
       } else {
-        return Left(ServerFailure(message: response.data['message'] ?? 'Failed to send activation code'));
+        return Left(ServerFailure(message: response.data['message'] ?? 'Không thể gửi mã kích hoạt'));
       }
     } on DioException catch (e) {
       return Left(_handleDioError(e));
@@ -160,7 +160,7 @@ class AuthRepositoryImpl implements AuthRepository {
       if (response.data['success'] == true) {
         return const Right(null);
       } else {
-        return Left(ServerFailure(message: response.data['message'] ?? 'Failed to send reset link'));
+        return Left(ServerFailure(message: response.data['message'] ?? 'Không thể gửi liên kết đặt lại mật khẩu'));
       }
     } on DioException catch (e) {
       return Left(_handleDioError(e));
@@ -187,7 +187,7 @@ class AuthRepositoryImpl implements AuthRepository {
       if (response.data['success'] == true) {
         return const Right(null);
       } else {
-        return Left(ServerFailure(message: response.data['message'] ?? 'Failed to reset password'));
+        return Left(ServerFailure(message: response.data['message'] ?? 'Không thể đặt lại mật khẩu'));
       }
     } on DioException catch (e) {
       return Left(_handleDioError(e));
@@ -298,7 +298,7 @@ class AuthRepositoryImpl implements AuthRepository {
       if (response.data['success'] == true) {
         return const Right(null);
       } else {
-        return Left(ServerFailure(message: response.data['message'] ?? 'Failed to change password'));
+        return Left(ServerFailure(message: response.data['message'] ?? 'Không thể đổi mật khẩu'));
       }
     } on DioException catch (e) {
       return Left(_handleDioError(e));

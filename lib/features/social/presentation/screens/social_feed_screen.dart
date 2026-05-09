@@ -23,7 +23,7 @@ class SocialFeedScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('Error: ${state.error}', style: AppTextStyles.body),
+                Text('Lỗi: ${state.error}', style: AppTextStyles.body),
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () => context.read<SocialFeedBloc>().add(FetchInitialFeed(isPersonalized: state.isPersonalized)),
