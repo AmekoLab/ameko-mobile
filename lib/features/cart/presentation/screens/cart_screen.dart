@@ -120,10 +120,6 @@ class _CartScreenState extends State<CartScreen> {
               style: AppTextStyles.body.copyWith(color: AppColors.textPrimary),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.chat_bubble_outline, color: AppColors.primary),
-            onPressed: () {},
-          ),
         ],
       ),
       body: MultiBlocListener(
@@ -299,8 +295,8 @@ class _CartScreenState extends State<CartScreen> {
                       ),
                     ),
                   _buildVoucherRow(
-                    'Lưu Voucher của Shop',
-                    selectedCode ?? 'Thêm mã giảm giá',
+                    'Voucher Shop',
+                    selectedCode ?? 'Thêm voucher',
                     Icons.confirmation_number_outlined,
                     onTap: () => _showVoucherBottomSheet(context, showSystem: false, shopId: shopId),
                   ),
@@ -457,7 +453,7 @@ class _CartScreenState extends State<CartScreen> {
           // Ameko Voucher Row (Only System)
           _buildVoucherRow(
             'Voucher Ameko',
-            state.appliedSystemVoucherCode != null ? 'Đã áp dụng: ${state.appliedSystemVoucherCode}' : 'Chọn mã giảm giá Ameko',
+            state.appliedSystemVoucherCode != null ? 'Đã áp dụng: ${state.appliedSystemVoucherCode}' : 'Thêm voucher',
             Icons.local_activity_outlined,
             onTap: () => _showVoucherBottomSheet(context, showShop: false),
           ),

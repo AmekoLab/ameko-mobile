@@ -191,6 +191,10 @@ class _PurchasesManagementView extends StatelessWidget {
           color: AppColors.surface,
           child: TabBar(
             controller: tabController,
+            isScrollable: false,
+            labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+            labelStyle: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold),
+            unselectedLabelStyle: AppTextStyles.bodySmall,
             indicatorColor: AppColors.primary,
             labelColor: AppColors.primary,
             unselectedLabelColor: AppColors.textSecondary,

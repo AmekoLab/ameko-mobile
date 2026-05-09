@@ -85,10 +85,17 @@ class PostDetailBloc extends Bloc<PostDetailEvent, PostDetailState> {
       (failure) => emit(state.copyWith(isLoadingComments: false, error: failure.message)),
       (data) {
         final newComments = data['items'] as List<CommentModel>;
+        
+        // Filter out any duplicates that might have been fetched or added optimistically
+        final existingIds = state.comments.map((c) => c.id).toSet();
+        final uniqueNewComments = newComments.where((c) => !existingIds.contains(c.id)).toList();
+        
+        final hasMore = data['hasNextPage'] == true && uniqueNewComments.isNotEmpty;
+        
         emit(state.copyWith(
           isLoadingComments: false,
-          comments: [...state.comments, ...newComments],
-          hasMoreComments: data['hasNextPage'],
+          comments: [...state.comments, ...uniqueNewComments],
+          hasMoreComments: hasMore,
           currentCommentPage: state.currentCommentPage + 1,
         ));
       },
