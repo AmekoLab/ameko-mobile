@@ -54,7 +54,10 @@ class _ChatListScreenState extends State<ChatListScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         elevation: 0,
-        title: Text('Messages', style: AppTextStyles.subheading.copyWith(fontWeight: FontWeight.bold)),
+        title: GestureDetector(
+          onTap: () => _bloc.add(FetchConversations()),
+          child: Text('Tin nhắn', style: AppTextStyles.subheading.copyWith(fontWeight: FontWeight.bold)),
+        ),
         centerTitle: false,
         toolbarHeight: 60,
       ),
@@ -65,30 +68,47 @@ class _ChatListScreenState extends State<ChatListScreen> {
               return const Center(child: CircularProgressIndicator());
             }
             if (state.status == ChatListStatus.failure && state.conversations.isEmpty) {
-              return Center(child: Text(state.error ?? 'Error loading chats'));
+              return Center(child: Text(state.error ?? 'Lỗi khi tải tin nhắn'));
             }
             if (state.conversations.isEmpty) {
-              return Center(child: Text('No chats yet', style: AppTextStyles.bodySecondary));
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Chưa có tin nhắn nào', style: AppTextStyles.bodySecondary),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => _bloc.add(FetchConversations()),
+                      child: const Text('Tải lại'),
+                    ),
+                  ],
+                ),
+              );
             }
 
-            return ListView.separated(
-              controller: _scrollController,
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: state.hasMore ? state.conversations.length + 1 : state.conversations.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 0),
-              itemBuilder: (context, i) {
-                if (i >= state.conversations.length) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                  );
-                }
-                final convo = state.conversations[i];
-                return _ChatTile(
-                  conversation: convo,
-                  onTap: () => context.push('/chat/${convo.conversationId}'),
-                );
+            return RefreshIndicator(
+              onRefresh: () async {
+                _bloc.add(FetchConversations());
               },
+              child: ListView.separated(
+                controller: _scrollController,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                itemCount: state.hasMore ? state.conversations.length + 1 : state.conversations.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 0),
+                itemBuilder: (context, i) {
+                  if (i >= state.conversations.length) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    );
+                  }
+                  final convo = state.conversations[i];
+                  return _ChatTile(
+                    conversation: convo,
+                    onTap: () => context.push('/chat/${convo.conversationId}'),
+                  );
+                },
+              ),
             );
           },
         ),
@@ -201,7 +221,7 @@ class _ChatTile extends StatelessWidget {
     final date = DateTime(time.year, time.month, time.day);
 
     if (date == today) {
-      return DateFormat('h:mm a').format(time);
+      return DateFormat('HH:mm').format(time);
     }
     final diff = now.difference(time);
     if (diff.inDays < 7) {

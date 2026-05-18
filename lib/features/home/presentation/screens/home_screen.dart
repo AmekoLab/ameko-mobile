@@ -7,6 +7,10 @@ import 'package:ameko_app/features/auth/presentation/bloc/auth_state.dart';
 import 'package:ameko_app/core/theme/app_colors.dart';
 import 'package:ameko_app/core/theme/app_text_styles.dart';
 import 'package:ameko_app/core/router/app_router.dart';
+import 'package:ameko_app/features/notification/presentation/bloc/notification_bloc.dart';
+import 'package:ameko_app/features/notification/presentation/bloc/notification_state.dart';
+import 'package:ameko_app/features/cart/presentation/bloc/cart_bloc.dart';
+import 'package:ameko_app/features/cart/presentation/bloc/cart_state.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.child});
@@ -19,8 +23,10 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int get _currentIndex {
     final location = GoRouterState.of(context).matchedLocation;
-    if (location.startsWith(AppRouter.profile)) return 3;
-    if (location.startsWith(AppRouter.orders)) return 2;
+    if (location.startsWith(AppRouter.profile)) return 5;
+    if (location.startsWith(AppRouter.orders)) return 4;
+    if (location.startsWith(AppRouter.cart)) return 3;
+    if (location.startsWith('/notifications')) return 2;
     if (location.startsWith(AppRouter.chat)) return 1;
     return 0;
   }
@@ -28,6 +34,8 @@ class _HomeScreenState extends State<HomeScreen> {
   static const _tabs = [
     AppRouter.home,
     AppRouter.chat,
+    '/notifications',
+    AppRouter.cart,
     AppRouter.orders,
     AppRouter.profile,
   ];
@@ -58,38 +66,114 @@ class _HomeScreenState extends State<HomeScreen> {
             backgroundColor: AppColors.surface,
             selectedItemColor: AppColors.primary,
             unselectedItemColor: AppColors.textSecondary,
-            selectedLabelStyle: AppTextStyles.caption.copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w600,
-            ),
-            unselectedLabelStyle: AppTextStyles.caption,
+            showSelectedLabels: false,
+            showUnselectedLabels: false,
             type: BottomNavigationBarType.fixed,
             elevation: 0,
-            items: const [
-              BottomNavigationBarItem(
+            items: [
+              const BottomNavigationBarItem(
                 icon: Icon(Icons.home_outlined),
                 activeIcon: Icon(Icons.home),
-                label: 'Home',
+                label: '',
               ),
-              BottomNavigationBarItem(
+              const BottomNavigationBarItem(
                 icon: Icon(Icons.chat_bubble_outline),
                 activeIcon: Icon(Icons.chat_bubble),
-                label: 'Chat',
+                label: '',
               ),
               BottomNavigationBarItem(
+                icon: BlocBuilder<NotificationBloc, NotificationState>(
+                  builder: (context, state) {
+                    return _IconWithBadge(
+                      icon: Icons.notifications_outlined,
+                      badgeCount: state.unreadCount,
+                    );
+                  },
+                ),
+                activeIcon: BlocBuilder<NotificationBloc, NotificationState>(
+                  builder: (context, state) {
+                    return _IconWithBadge(
+                      icon: Icons.notifications,
+                      badgeCount: state.unreadCount,
+                    );
+                  },
+                ),
+                label: '',
+              ),
+              BottomNavigationBarItem(
+                icon: BlocBuilder<CartBloc, CartState>(
+                  builder: (context, state) {
+                    final count = state.cart?.items.length ?? 0;
+                    return _IconWithBadge(
+                      icon: Icons.shopping_cart_outlined,
+                      badgeCount: count,
+                    );
+                  },
+                ),
+                activeIcon: BlocBuilder<CartBloc, CartState>(
+                  builder: (context, state) {
+                    final count = state.cart?.items.length ?? 0;
+                    return _IconWithBadge(
+                      icon: Icons.shopping_cart,
+                      badgeCount: count,
+                    );
+                  },
+                ),
+                label: '',
+              ),
+              const BottomNavigationBarItem(
                 icon: Icon(Icons.shopping_bag_outlined),
                 activeIcon: Icon(Icons.shopping_bag),
-                label: 'Orders',
+                label: '',
               ),
-              BottomNavigationBarItem(
+              const BottomNavigationBarItem(
                 icon: Icon(Icons.person_outline),
                 activeIcon: Icon(Icons.person),
-                label: 'Profile',
+                label: '',
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _IconWithBadge extends StatelessWidget {
+  final IconData icon;
+  final int badgeCount;
+
+  const _IconWithBadge({required this.icon, required this.badgeCount});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Icon(icon),
+        if (badgeCount > 0)
+          Positioned(
+            right: -6,
+            top: -6,
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                color: AppColors.error,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              child: Text(
+                badgeCount > 99 ? '99+' : '$badgeCount',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -116,7 +200,7 @@ class HomeBodyPlaceholder extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Good morning! 👋', style: AppTextStyles.bodySecondary),
+                        Text('Xin chào, $userName! 👋', style: AppTextStyles.bodySecondary),
                         const SizedBox(height: 2),
                         Text(userName, style: AppTextStyles.heading),
                       ],
@@ -148,14 +232,14 @@ class HomeBodyPlaceholder extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Explore Keyboards',
+                        'Khám phá Bàn phím',
                         style: AppTextStyles.headingMedium.copyWith(
                           color: Colors.white,
                         ),
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Find the perfect custom keyboard for you',
+                        'Tìm bàn phím tùy chỉnh hoàn hảo cho bạn',
                         style: AppTextStyles.bodySecondary.copyWith(
                           color: Colors.white70,
                         ),
@@ -171,7 +255,7 @@ class HomeBodyPlaceholder extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          'Shop Now',
+                          'Mua sắm ngay',
                           style: AppTextStyles.label
                               .copyWith(color: AppColors.primary),
                         ),
@@ -180,7 +264,7 @@ class HomeBodyPlaceholder extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
-                Text('Categories', style: AppTextStyles.subheading),
+                Text('Danh mục', style: AppTextStyles.subheading),
                 const SizedBox(height: 16),
                 GridView.count(
                   shrinkWrap: true,
@@ -190,8 +274,8 @@ class HomeBodyPlaceholder extends StatelessWidget {
                   mainAxisSpacing: 12,
                   childAspectRatio: 1.4,
                   children: const [
-                    _CategoryCard(icon: Icons.keyboard, label: 'Keyboards'),
-                    _CategoryCard(icon: Icons.cable, label: 'Cables'),
+                    _CategoryCard(icon: Icons.keyboard, label: 'Bàn phím'),
+                    _CategoryCard(icon: Icons.cable, label: 'Dây cáp'),
                     _CategoryCard(icon: Icons.gamepad, label: 'Switches'),
                     _CategoryCard(icon: Icons.apps, label: 'Keycaps'),
                   ],

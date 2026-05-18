@@ -1,17 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:ameko_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:ameko_app/features/auth/presentation/bloc/auth_state.dart';
 import 'package:ameko_app/features/auth/presentation/bloc/auth_event.dart';
 import 'package:ameko_app/core/theme/app_colors.dart';
 import 'package:ameko_app/core/theme/app_text_styles.dart';
+import '../../../../l10n/app_localizations.dart';
+import 'package:ameko_app/core/bloc/locale_bloc.dart';
+import 'package:ameko_app/features/payment/presentation/bloc/wallet/wallet_bloc.dart';
+import 'package:ameko_app/features/payment/presentation/bloc/wallet/wallet_event.dart';
+import 'package:ameko_app/features/payment/presentation/bloc/wallet/wallet_state.dart';
+import 'package:ameko_app/injection_container.dart';
+import 'package:ameko_app/core/router/app_router.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  late final WalletBloc _walletBloc;
+
+  @override
+  void initState() {
+    super.initState();
+    _walletBloc = sl<WalletBloc>()..add(FetchWallet());
+  }
+
+  @override
+  void dispose() {
+    _walletBloc.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
         if (state is! AuthSuccess) {
@@ -21,33 +49,39 @@ class ProfileScreen extends StatelessWidget {
         final user = state.user;
 
         return Scaffold(
-          backgroundColor: AppColors.background,
-          body: RefreshIndicator(
-            onRefresh: () async {
-              context.read<AuthBloc>().add(const ProfileFetchRequested());
-            },
-            child: CustomScrollView(
-              slivers: [
-                _buildAppBar(context, user.fullName ?? user.username),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      children: [
-                        _buildProfileHeader(
-                            user.fullName ?? user.username,
-                            user.email,
-                            user.role ?? 'User'),
-                        const SizedBox(height: 32),
-                        _buildMenuSection(context),
-                        const SizedBox(height: 32),
-                        _buildLogoutButton(context),
-                        const SizedBox(height: 48),
-                      ],
+          backgroundColor: const Color(0xFFF5F6FA),
+          body: BlocProvider.value(
+            value: _walletBloc,
+            child: RefreshIndicator(
+              onRefresh: () async {
+                context.read<AuthBloc>().add(const ProfileFetchRequested());
+                _walletBloc.add(FetchWallet());
+              },
+              child: CustomScrollView(
+                slivers: [
+                  _buildAppBar(context, user.fullName ?? user.username, l10n),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        children: [
+                          _buildProfileHeader(
+                              user.fullName ?? user.username,
+                              user.email,
+                              user.role ?? 'Người dùng'),
+                          const SizedBox(height: 24),
+                          _buildWalletCard(context),
+                          const SizedBox(height: 24),
+                          _buildMenuSection(context, l10n),
+                          const SizedBox(height: 32),
+                          _buildLogoutButton(context, l10n),
+                          const SizedBox(height: 48),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
@@ -55,13 +89,13 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAppBar(BuildContext context, String name) {
+  Widget _buildAppBar(BuildContext context, String name, AppLocalizations l10n) {
     return SliverAppBar(
       expandedHeight: 0,
       floating: true,
       backgroundColor: AppColors.background,
       elevation: 0,
-      title: Text('Profile', style: AppTextStyles.headingMedium),
+      title: Text('Cá nhân', style: AppTextStyles.headingMedium),
       centerTitle: true,
     );
   }
@@ -91,7 +125,7 @@ class ProfileScreen extends StatelessWidget {
               ),
               child: Center(
                 child: Text(
-                  name[0].toUpperCase(),
+                  name.isNotEmpty ? name[0].toUpperCase() : 'N',
                   style: AppTextStyles.heading.copyWith(
                     color: Colors.white,
                     fontSize: 40,
@@ -129,7 +163,7 @@ class ProfileScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
-            role.toUpperCase(),
+            (role.toLowerCase() == 'shop' ? 'CỬA HÀNG' : 'NGƯỜI DÙNG'),
             style: AppTextStyles.caption.copyWith(
               color: AppColors.primary,
               fontWeight: FontWeight.bold,
@@ -140,7 +174,95 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuSection(BuildContext context) {
+  Widget _buildWalletCard(BuildContext context) {
+    final formatter = NumberFormat('#,###', 'vi_VN');
+    return BlocBuilder<WalletBloc, WalletState>(
+      builder: (context, state) {
+        double? balance;
+        if (state is WalletLoaded) balance = state.wallet.balance;
+
+        return GestureDetector(
+          onTap: () => context.push('/wallet/dashboard'),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [AppColors.primary, AppColors.primaryLight],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.3),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.account_balance_wallet_rounded,
+                    color: Colors.white,
+                    size: 26,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Ví Ameko',
+                        style: AppTextStyles.caption.copyWith(
+                          color: Colors.white70,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      if (state is WalletLoading)
+                        Container(
+                          width: 80,
+                          height: 18,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        )
+                      else
+                        Text(
+                          balance != null
+                              ? '${formatter.format(balance.toInt())}đ'
+                              : '-- đ',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_right,
+                  color: Colors.white70,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMenuSection(BuildContext context, AppLocalizations l10n) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -151,41 +273,88 @@ class ProfileScreen extends StatelessWidget {
         children: [
           _buildMenuItem(
             icon: Icons.person_outline,
-            title: 'Account Settings',
-            onTap: () {},
+            title: 'Thiết lập tài khoản',
+            onTap: () => context.push(AppRouter.editProfile),
+          ),
+          _buildDivider(),
+          _buildMenuItem(
+            icon: Icons.lock_outline,
+            title: 'Đổi mật khẩu',
+            onTap: () => context.push(AppRouter.changePassword),
           ),
           _buildDivider(),
           _buildMenuItem(
             icon: Icons.shopping_bag_outlined,
-            title: 'My Orders',
-            onTap: () {},
+            title: 'Đơn hàng',
+            onTap: () => context.push('/orders'),
           ),
           _buildDivider(),
           _buildMenuItem(
-            icon: Icons.favorite_border,
-            title: 'Wishlist',
-            onTap: () {},
+            icon: Icons.language,
+            title: 'Ngôn ngữ',
+            onTap: () => _showLanguagePicker(context, l10n),
           ),
           _buildDivider(),
           _buildMenuItem(
             icon: Icons.notifications_none,
-            title: 'Notifications',
-            onTap: () {},
-          ),
-          _buildDivider(),
-          _buildMenuItem(
-            icon: Icons.security,
-            title: 'Privacy & Security',
+            title: 'Thông báo',
             onTap: () {},
           ),
           _buildDivider(),
           _buildMenuItem(
             icon: Icons.help_outline,
-            title: 'Help Center',
+            title: 'Trung tâm hỗ trợ',
             onTap: () {},
           ),
         ],
       ),
+    );
+  }
+
+  void _showLanguagePicker(BuildContext context, AppLocalizations l10n) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Chọn ngôn ngữ', style: AppTextStyles.titleMedium),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Text('🇺🇸', style: TextStyle(fontSize: 24)),
+                title: const Text('Tiếng Anh'),
+                trailing: BlocBuilder<LocaleBloc, LocaleState>(
+                  builder: (context, state) => state.locale.languageCode == 'en'
+                      ? const Icon(Icons.check_circle, color: AppColors.primary)
+                      : const SizedBox.shrink(),
+                ),
+                onTap: () {
+                  context.read<LocaleBloc>().add(const ChangeLocale(Locale('en')));
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Text('🇻🇳', style: TextStyle(fontSize: 24)),
+                title: const Text('Tiếng Việt'),
+                trailing: BlocBuilder<LocaleBloc, LocaleState>(
+                  builder: (context, state) => state.locale.languageCode == 'vi'
+                      ? const Icon(Icons.check_circle, color: AppColors.primary)
+                      : const SizedBox.shrink(),
+                ),
+                onTap: () {
+                  context.read<LocaleBloc>().add(const ChangeLocale(Locale('vi')));
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -207,18 +376,18 @@ class ProfileScreen extends StatelessWidget {
     return const Divider(height: 1, indent: 20, endIndent: 20, color: AppColors.border);
   }
 
-  Widget _buildLogoutButton(BuildContext context) {
+  Widget _buildLogoutButton(BuildContext context, AppLocalizations l10n) {
     return GestureDetector(
       onTap: () {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Sign Out'),
-            content: const Text('Are you sure you want to sign out?'),
+            title: const Text('Đăng xuất'),
+            content: const Text('Bạn có chắc chắn muốn đăng xuất không?'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
+                child: const Text('Hủy'),
               ),
               TextButton(
                 onPressed: () {
@@ -226,7 +395,7 @@ class ProfileScreen extends StatelessWidget {
                   context.read<AuthBloc>().add(const LoggedOut());
                 },
                 style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: const Text('Sign Out'),
+                child: const Text('Đăng xuất'),
               ),
             ],
           ),
@@ -240,14 +409,14 @@ class ProfileScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.red.withOpacity(0.1)),
         ),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.logout, color: Colors.redAccent, size: 20),
-            SizedBox(width: 12),
+            const Icon(Icons.logout, color: Colors.redAccent, size: 20),
+            const SizedBox(width: 12),
             Text(
-              'Sign Out',
-              style: TextStyle(
+              'Đăng xuất',
+              style: const TextStyle(
                 color: Colors.redAccent,
                 fontWeight: FontWeight.bold,
                 fontSize: 16,

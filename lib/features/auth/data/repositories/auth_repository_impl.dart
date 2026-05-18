@@ -45,7 +45,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
         // 3. Supplement with full profile (optional but recommended)
         try {
-          final profileResult = await getProfile(id: data.id, token: data.token);
+          final profileResult = await getProfile(id: data.id);
           return profileResult.fold(
             (failure) => Right(initialUser), // Fallback to login data if profile fetch fails
             (profileUser) async {
@@ -80,40 +80,30 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, UserEntity>> getProfile({
-    required String id,
-    required String token,
+  Future<Either<Failure, UserEntity>> register({
+    required String username,
+    required String email,
+    required String password,
+    required String firstName,
+    required String lastName,
   }) async {
     try {
-      final response = await _dio.get(
-        '/api/v1/Users/profile/$id',
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      final response = await _dio.post(
+        '/api/v1/Users/register',
+        data: {
+          'username': username,
+          'email': email,
+          'password': password,
+          'firstName': firstName,
+          'lastName': lastName,
+        },
       );
 
-      final profileResponse = ProfileResponseModel.fromJson(response.data);
-
-      if (profileResponse.success && profileResponse.data != null) {
-        final profileUser = profileResponse.data!;
-        
-        // Merge with existing cached data to preserve fields like 'role' or 'token'
-        final cachedUserJson = _storage.getUser();
-        final cachedUser = cachedUserJson != null ? UserEntity.fromJson(cachedUserJson) : null;
-
-        final mergedUser = UserModel(
-          id: profileUser.id.isNotEmpty ? profileUser.id : id,
-          username: profileUser.username.isNotEmpty ? profileUser.username : (cachedUser?.username ?? ''),
-          email: profileUser.email.isNotEmpty ? profileUser.email : (cachedUser?.email ?? ''),
-          fullName: profileUser.fullName ?? cachedUser?.fullName,
-          role: (profileUser.role != null && profileUser.role!.isNotEmpty) 
-              ? profileUser.role 
-              : cachedUser?.role,
-          token: profileUser.token ?? token, // Keep current token if profile doesn't return one
-        );
-
-        await _storage.saveUser(mergedUser.toJson());
-        return Right(mergedUser);
+      final apiResponse = ProfileResponseModel.fromJson(response.data);
+      if (apiResponse.success && apiResponse.data != null) {
+        return Right(apiResponse.data!);
       } else {
-        return Left(ServerFailure(message: profileResponse.message));
+        return Left(ValidationFailure(message: apiResponse.message));
       }
     } on DioException catch (e) {
       return Left(_handleDioError(e));
@@ -121,35 +111,64 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, UserEntity>> register({
-    required String name,
-    required String email,
-    required String password,
-  }) async {
-    // Implement real registration if needed, otherwise keep mock-like but with Dio
-    return Left(ServerFailure(message: 'Registration not implemented yet.'));
+  Future<Either<Failure, void>> sendActivationCode(String email) async {
+    try {
+      final response = await _dio.post(
+        '/api/v1/Users/send-activation-code',
+        data: email, // Payload is just the string email as per guide
+      );
+      if (response.data['success'] == true) {
+        return const Right(null);
+      } else {
+        return Left(ServerFailure(message: response.data['message'] ?? 'Không thể gửi mã kích hoạt'));
+      }
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    }
   }
 
   @override
-  Future<Either<Failure, String>> forgotPassword({required String email}) async {
+  Future<Either<Failure, void>> verifyOtp({
+    required String email,
+    required String code,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/api/v1/Users/verify-activation-code',
+        data: {
+          'email': email,
+          'code': code,
+        },
+      );
+      if (response.data['success'] == true) {
+        return const Right(null);
+      } else {
+        return Left(ServerFailure(message: response.data['message'] ?? 'Invalid OTP code'));
+      }
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> forgotPassword({required String email}) async {
     try {
       final response = await _dio.post(
         '/api/v1/Users/forgot-password',
         data: {'email': email},
       );
-      
-      final data = response.data;
-      if (data is Map && data.containsKey('message')) {
-        return Right(data['message'].toString());
+      if (response.data['success'] == true) {
+        return const Right(null);
+      } else {
+        return Left(ServerFailure(message: response.data['message'] ?? 'Không thể gửi liên kết đặt lại mật khẩu'));
       }
-      return const Right('Reset instructions sent to your email.');
     } on DioException catch (e) {
       return Left(_handleDioError(e));
     }
   }
 
   @override
-  Future<Either<Failure, String>> resetPassword({
+  Future<Either<Failure, void>> resetPassword({
     required String email,
     required String code,
     required String newPassword,
@@ -165,20 +184,125 @@ class AuthRepositoryImpl implements AuthRepository {
           'confirmPassword': confirmPassword,
         },
       );
-      
-      final data = response.data;
-      if (data is Map && data.containsKey('message')) {
-        return Right(data['message'].toString());
+      if (response.data['success'] == true) {
+        return const Right(null);
+      } else {
+        return Left(ServerFailure(message: response.data['message'] ?? 'Không thể đặt lại mật khẩu'));
       }
-      return const Right('Password reset successful.');
     } on DioException catch (e) {
       return Left(_handleDioError(e));
     }
   }
 
   @override
-  Future<Either<Failure, void>> verifyOtp({required String otp}) async {
-    return const Left(ServerFailure(message: 'OTP verification not implemented.'));
+  Future<Either<Failure, UserEntity>> getProfile({required String id}) async {
+    try {
+      final response = await _dio.get(
+        id.isEmpty ? '/api/v1/Users/profile' : '/api/v1/Users/profile/$id',
+      );
+
+      final profileResponse = ProfileResponseModel.fromJson(response.data);
+
+      if (profileResponse.success && profileResponse.data != null) {
+        final profileUser = profileResponse.data!;
+        final cachedUserJson = _storage.getUser();
+        final cachedUser = cachedUserJson != null ? UserEntity.fromJson(cachedUserJson) : null;
+
+        final mergedUser = UserModel(
+          id: profileUser.id.isNotEmpty ? profileUser.id : id,
+          username: profileUser.username.isNotEmpty ? profileUser.username : (cachedUser?.username ?? ''),
+          email: profileUser.email.isNotEmpty ? profileUser.email : (cachedUser?.email ?? ''),
+          fullName: profileUser.fullName ?? cachedUser?.fullName,
+          firstName: profileUser.firstName ?? cachedUser?.firstName,
+          lastName: profileUser.lastName ?? cachedUser?.lastName,
+          role: (profileUser.role != null && profileUser.role!.isNotEmpty) 
+              ? profileUser.role 
+              : cachedUser?.role,
+          token: profileUser.token ?? cachedUser?.token,
+          gender: profileUser.gender ?? cachedUser?.gender,
+          dateOfBirth: profileUser.dateOfBirth ?? cachedUser?.dateOfBirth,
+          phoneNumber: profileUser.phoneNumber ?? cachedUser?.phoneNumber,
+          image: profileUser.image ?? cachedUser?.image,
+          storeAddress: profileUser.storeAddress ?? cachedUser?.storeAddress,
+          storeDescription: profileUser.storeDescription ?? cachedUser?.storeDescription,
+          banner: profileUser.banner ?? cachedUser?.banner,
+        );
+
+        await _storage.saveUser(mergedUser.toJson());
+        return Right(mergedUser);
+      } else {
+        return Left(ServerFailure(message: profileResponse.message));
+      }
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, UserEntity>> updateProfile({
+    required String userId,
+    String? firstName,
+    String? lastName,
+    int? gender,
+    String? dateOfBirth,
+    String? phoneNumber,
+    String? image,
+    String? storeAddress,
+    String? storeDescription,
+    String? banner,
+  }) async {
+    try {
+      final response = await _dio.put(
+        userId.isEmpty ? '/api/v1/Users/profile' : '/api/v1/Users/profile/$userId',
+        data: {
+          if (firstName != null) 'firstName': firstName,
+          if (lastName != null) 'lastName': lastName,
+          if (gender != null) 'gender': gender,
+          if (dateOfBirth != null) 'dateOfBirth': dateOfBirth,
+          if (phoneNumber != null) 'phoneNumber': phoneNumber,
+          if (image != null) 'image': image,
+          if (storeAddress != null) 'storeAddress': storeAddress,
+          if (storeDescription != null) 'storeDescription': storeDescription,
+          if (banner != null) 'banner': banner,
+        },
+      );
+
+      final apiResponse = ProfileResponseModel.fromJson(response.data);
+      if (apiResponse.success && apiResponse.data != null) {
+        await _storage.saveUser(apiResponse.data!.toJson());
+        return Right(apiResponse.data!);
+      } else {
+        return Left(ServerFailure(message: apiResponse.message));
+      }
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> changePassword({
+    required String userId,
+    required String oldPassword,
+    required String newPassword,
+    required String confirmNewPassword,
+  }) async {
+    try {
+      final response = await _dio.post(
+        userId.isEmpty ? '/api/v1/Users/change-password' : '/api/v1/Users/change-password/$userId',
+        data: {
+          'oldPassword': oldPassword,
+          'newPassword': newPassword,
+          'confirmNewPassword': confirmNewPassword,
+        },
+      );
+      if (response.data['success'] == true) {
+        return const Right(null);
+      } else {
+        return Left(ServerFailure(message: response.data['message'] ?? 'Không thể đổi mật khẩu'));
+      }
+    } on DioException catch (e) {
+      return Left(_handleDioError(e));
+    }
   }
 
   @override
@@ -190,10 +314,9 @@ class AuthRepositoryImpl implements AuthRepository {
       final userId = user?['id'];
 
       if (userId != null && refreshToken != null) {
-        appLogger.d('Logging out user: $userId');
         final response = await _dio.post(
           '/api/v1/Users/logout/$userId',
-          data: {'refreshToken': refreshToken},
+          data: refreshToken, // Backend might expect string as payload
         );
         
         final data = response.data;
@@ -203,7 +326,6 @@ class AuthRepositoryImpl implements AuthRepository {
       }
     } catch (e) {
       appLogger.e('Error during API logout', error: e);
-      // Even if API fails, we still consider it a local logout
     } finally {
       await _storage.clearAll();
     }
@@ -230,8 +352,9 @@ class AuthRepositoryImpl implements AuthRepository {
           return ServerFailure(message: apiMessage.toString());
         }
       }
+      return const ServerFailure();
     }
     
-    return UnknownFailure(message: e.message ?? 'Unknown error');
+    return const UnknownFailure();
   }
 }

@@ -28,11 +28,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _submit(BuildContext context) {
     if (_formKey.currentState?.saveAndValidate() ?? false) {
       final values = _formKey.currentState!.value;
+      final fullName = (values['name'] as String).trim();
+      final email = (values['email'] as String).trim();
+      final password = values['password'] as String;
+      
+      final nameParts = fullName.split(' ');
+      final firstName = nameParts.first;
+      final lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : 'User';
+      final username = email.split('@')[0];
+
       context.read<AuthBloc>().add(
             RegisterRequested(
-              name: values['name'] as String,
-              email: values['email'] as String,
-              password: values['password'] as String,
+              username: username,
+              firstName: firstName,
+              lastName: lastName,
+              email: email,
+              password: password,
             ),
           );
     }
@@ -42,8 +53,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
-        if (state is AuthSuccess) {
-          context.go(AppRouter.home);
+        if (state is AuthActionSuccess) {
+          AppSnackBar.showSuccess(context, message: state.message);
+          final email = _formKey.currentState?.value['email'] as String?;
+          context.push('/auth/otp?email=$email');
         } else if (state is AuthFailure) {
           AppSnackBar.showError(context, message: state.message);
         }
@@ -54,7 +67,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
           return BaseScreen(
             showAppBar: true,
-            title: 'Create Account',
+            title: 'Tạo tài khoản',
             centerContent: false,
             body: SingleChildScrollView(
               child: FormBuilder(
@@ -63,16 +76,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     AppSpacing.v8,
-                    Text('Join Ameko', style: AppTextStyles.heading),
+                    Text('Tham gia Ameko', style: AppTextStyles.heading),
                     AppSpacing.v8,
                     Text(
-                      'Fill in the details below to get started.',
+                      'Điền thông tin bên dưới để bắt đầu.',
                       style: AppTextStyles.bodySecondary,
                     ),
                     AppSpacing.v32,
                     AppTextField(
                       name: 'name',
-                      hint: 'Full Name',
+                      hint: 'Họ và tên',
                       autofocus: true,
                       keyboardType: TextInputType.name,
                       textInputAction: TextInputAction.next,
@@ -86,7 +99,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     AppSpacing.v16,
                     AppTextField(
                       name: 'email',
-                      hint: 'Email Address',
+                      hint: 'Địa chỉ Email',
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       prefixIcon: const Icon(
@@ -99,9 +112,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     AppSpacing.v16,
                     AppTextField(
                       name: 'password',
-                      hint: 'Password',
+                      hint: 'Mật khẩu',
                       isPassword: true,
-                      textInputAction: TextInputAction.done,
+                      textInputAction: TextInputAction.next,
                       prefixIcon: const Icon(
                         Icons.lock_outline,
                         color: AppColors.textSecondary,
@@ -109,9 +122,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       validator: AppValidators.validatePassword,
                     ),
+                    AppSpacing.v16,
+                    AppTextField(
+                      name: 'confirmPassword',
+                      hint: 'Xác nhận mật khẩu',
+                      isPassword: true,
+                      textInputAction: TextInputAction.done,
+                      prefixIcon: const Icon(
+                        Icons.lock_reset,
+                        color: AppColors.textSecondary,
+                        size: 20,
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) return 'Vui lòng xác nhận mật khẩu';
+                        if (value != _formKey.currentState?.fields['password']?.value) return 'Mật khẩu không khớp';
+                        return null;
+                      },
+                    ),
                     AppSpacing.v32,
                     AppButton(
-                      text: 'Create Account',
+                      text: 'Tạo tài khoản',
                       onPressed: () => _submit(context),
                       isLoading: isLoading,
                       enabled: !isLoading,
@@ -121,13 +151,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Already have an account? ',
+                          'Đã có tài khoản? ',
                           style: AppTextStyles.bodySecondary,
                         ),
                         GestureDetector(
                           onTap: () => context.go(AppRouter.login),
                           child: Text(
-                            'Sign In',
+                            'Đăng nhập',
                             style: AppTextStyles.link.copyWith(
                               fontWeight: FontWeight.w600,
                             ),

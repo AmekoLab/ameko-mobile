@@ -12,7 +12,13 @@ import 'package:ameko_app/features/auth/presentation/screens/forgot_password_scr
 import 'package:ameko_app/features/auth/presentation/screens/otp_screen.dart';
 import 'package:ameko_app/features/auth/presentation/screens/profile_screen.dart';
 import 'package:ameko_app/features/auth/presentation/screens/reset_password_screen.dart';
+import 'package:ameko_app/features/auth/presentation/screens/edit_profile_screen.dart';
+import 'package:ameko_app/features/auth/presentation/screens/change_password_screen.dart';
 import 'package:ameko_app/features/home/presentation/screens/home_screen.dart';
+import 'package:ameko_app/features/social/presentation/screens/social_home_screen.dart';
+import 'package:ameko_app/features/social/presentation/screens/post_detail_screen.dart';
+import 'package:ameko_app/features/social/data/models/post_model.dart';
+import 'package:ameko_app/features/social/presentation/bloc/post_detail_bloc.dart';
 import 'package:ameko_app/features/chat/presentation/screens/chat_list_screen.dart';
 import 'package:ameko_app/features/chat/presentation/screens/chat_detail_screen.dart';
 import 'package:ameko_app/features/order/domain/entities/order_entity.dart';
@@ -20,6 +26,30 @@ import 'package:ameko_app/features/order/presentation/screens/order_detail_scree
 import 'package:ameko_app/features/order/presentation/screens/order_list_screen.dart';
 import 'package:ameko_app/features/chat/presentation/bloc/chat_list_bloc.dart';
 import 'package:ameko_app/features/chat/presentation/bloc/chat_list_event.dart';
+import 'package:ameko_app/features/assembled_product/presentation/screens/assembled_product_list_screen.dart';
+import 'package:ameko_app/features/assembled_product/presentation/screens/assembled_product_detail_screen.dart';
+import 'package:ameko_app/features/assembled_product/presentation/bloc/assembled_product_list_bloc.dart';
+import 'package:ameko_app/features/assembled_product/presentation/bloc/assembled_product_list_event.dart';
+import 'package:ameko_app/features/cart/presentation/screens/cart_screen.dart';
+import 'package:ameko_app/features/cart/presentation/bloc/cart_bloc.dart';
+import 'package:ameko_app/features/cart/presentation/bloc/cart_event.dart';
+import 'package:ameko_app/features/payment/presentation/bloc/checkout/checkout_bloc.dart';
+import 'package:ameko_app/features/payment/presentation/bloc/wallet/wallet_bloc.dart';
+import 'package:ameko_app/features/payment/presentation/screens/checkout_screen.dart';
+import 'package:ameko_app/features/payment/presentation/screens/vnpay_webview_screen.dart';
+import 'package:ameko_app/features/payment/presentation/screens/payment_result_screen.dart';
+import 'package:ameko_app/features/payment/presentation/screens/wallet_screen.dart';
+import 'package:ameko_app/features/payment/presentation/screens/wallet_topup_screen.dart';
+import 'package:ameko_app/features/payment/presentation/screens/pin_setup_screen.dart';
+import 'package:ameko_app/features/payment/presentation/screens/pin_change_screen.dart';
+import 'package:ameko_app/features/payment/presentation/screens/pin_reset_screen.dart';
+import 'package:ameko_app/features/payment/presentation/screens/wallet_dashboard_screen.dart';
+import 'package:ameko_app/features/payment/presentation/screens/transaction_detail_screen.dart';
+import 'package:ameko_app/features/assembled_product/presentation/screens/assembled_product_search_screen.dart';
+import 'package:ameko_app/features/assembled_product/presentation/bloc/assembled_product_search_bloc.dart';
+import 'package:ameko_app/features/notification/presentation/screens/notification_list_screen.dart';
+import 'package:ameko_app/features/notification/presentation/bloc/notification_bloc.dart';
+import 'package:ameko_app/features/notification/presentation/bloc/notification_event.dart';
 import 'package:ameko_app/injection_container.dart';
 
 class AppRouter {
@@ -37,6 +67,21 @@ class AppRouter {
   static const orderDetail = '/orders/:id';
   static const profile = '/profile';
   static const resetPassword = '/reset-password';
+  static const assembledProducts = '/assembled-products';
+  static const assembledProductDetail = '/assembled-products/:id';
+  static const cart = '/cart';
+  static const checkout = '/checkout';
+  static const vnpayWebview = '/payment/vnpay-webview';
+  static const paymentResult = '/payment/result';
+  static const wallet = '/wallet';
+  static const walletDashboard = '/wallet/dashboard';
+  static const walletTopup = '/wallet/topup';
+  static const pinSetup = '/wallet/pin-setup';
+  static const pinChange = '/wallet/pin-change';
+  static const pinReset = '/wallet/pin-reset';
+  static const transactionDetail = '/wallet/transaction/:id';
+  static const editProfile = '/profile/edit';
+  static const changePassword = '/profile/change-password';
 
   static GoRouter createRouter(BuildContext context) {
     final authBloc = context.read<AuthBloc>();
@@ -110,19 +155,42 @@ class AppRouter {
         // Shell route for bottom nav
         ShellRoute(
           builder: (context, state, child) {
-            return BlocProvider(
-              create: (context) => sl<ChatListBloc>()..add(FetchConversations()),
+            return MultiBlocProvider(
+              providers: [
+                BlocProvider(
+                  create: (context) => sl<ChatListBloc>()..add(FetchConversations()),
+                ),
+                BlocProvider(
+                  create: (context) => sl<NotificationBloc>()
+                    ..add(InitializeSignalR())
+                    ..add(FetchUnreadCount()),
+                ),
+                BlocProvider(
+                  create: (context) => sl<CartBloc>()..add(FetchCart()),
+                ),
+              ],
               child: HomeScreen(child: child),
             );
           },
           routes: [
             GoRoute(
               path: home,
-              builder: (_, __) => const HomeBodyPlaceholder(),
+              builder: (_, __) => const SocialHomeScreen(),
             ),
             GoRoute(
               path: chat,
               builder: (_, __) => const ChatListScreen(),
+            ),
+            GoRoute(
+              path: '/post-detail/:id',
+              builder: (context, state) {
+                final id = int.parse(state.pathParameters['id'] ?? '0');
+                final post = state.extra as PostModel?;
+                return BlocProvider(
+                  create: (context) => sl<PostDetailBloc>(param1: post)..add(FetchComments(id)),
+                  child: PostDetailScreen(postId: id, initialPost: post),
+                );
+              },
             ),
             GoRoute(
               path: '/chat/:id',
@@ -147,12 +215,150 @@ class AppRouter {
               path: profile,
               builder: (_, __) => const ProfileScreen(),
             ),
+            GoRoute(
+              path: editProfile,
+              builder: (_, __) => const EditProfileScreen(),
+            ),
+            GoRoute(
+              path: changePassword,
+              builder: (_, __) => const ChangePasswordScreen(),
+            ),
+
+
+
+
+            GoRoute(
+              path: '/notifications',
+              builder: (_, __) => const NotificationListScreen(),
+            ),
+            GoRoute(
+              path: assembledProducts,
+              builder: (_, __) => BlocProvider(
+                create: (_) => sl<AssembledProductListBloc>()..add(FetchAssembledProducts()),
+                child: const AssembledProductListScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/assembled-products/search',
+              builder: (context, state) => BlocProvider(
+                create: (_) => sl<AssembledProductSearchBloc>(),
+                child: const AssembledProductSearchScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/assembled-products/:id',
+              builder: (_, state) {
+                final id = state.pathParameters['id'] ?? '';
+                return AssembledProductDetailScreen(productId: id);
+              },
+            ),
+            GoRoute(
+              path: cart,
+              builder: (_, __) => BlocProvider(
+                create: (_) => sl<CheckoutBloc>(),
+                child: const CartScreen(),
+              ),
+            ),
+            GoRoute(
+              path: checkout,
+              builder: (context, state) {
+                final extra = state.extra as Map<String, dynamic>;
+                return MultiBlocProvider(
+                  providers: [
+                    BlocProvider(create: (_) => sl<CheckoutBloc>()),
+                    BlocProvider(create: (_) => sl<WalletBloc>()),
+                  ],
+                  child: CheckoutScreen(
+                    selectedOrderItemIds: extra['itemIds'] as List<String>,
+                    totalAmount: extra['total'] as double,
+                    initialSystemVoucherCode: extra['systemVoucherCode'] as String?,
+                    initialShopVoucherCodes: extra['shopVoucherCodes'] as Map<String, String>?,
+                  ),
+                );
+              },
+            ),
+            GoRoute(
+              path: vnpayWebview,
+              builder: (context, state) {
+                final extra = state.extra as Map<String, dynamic>;
+                return VnpayWebviewScreen(
+                  paymentUrl: extra['paymentUrl'] as String,
+                  checkoutBloc: extra['checkoutBloc'] as CheckoutBloc?,
+                );
+              },
+            ),
+            GoRoute(
+              path: paymentResult,
+              builder: (context, state) {
+                final extra = state.extra as Map<String, dynamic>;
+                return PaymentResultScreen(
+                  success: extra['success'] as bool,
+                  paymentMethod: extra['paymentMethod'] as String,
+                  message: extra['message'] as String,
+                );
+              },
+            ),
+            GoRoute(
+              path: wallet,
+              builder: (context, state) => BlocProvider(
+                create: (_) => sl<WalletBloc>(),
+                child: const WalletDashboardScreen(),
+              ),
+            ),
+            GoRoute(
+              path: walletDashboard,
+              builder: (context, state) => BlocProvider(
+                create: (_) => sl<WalletBloc>(),
+                child: const WalletDashboardScreen(),
+              ),
+            ),
+            GoRoute(
+              path: walletTopup,
+              builder: (context, state) => BlocProvider(
+                create: (_) => sl<WalletBloc>(),
+                child: const WalletTopupScreen(),
+              ),
+            ),
+            GoRoute(
+              path: pinSetup,
+              builder: (context, state) {
+                final isSetup = state.extra as bool? ?? true;
+                return BlocProvider(
+                  create: (_) => sl<WalletBloc>(),
+                  child: PinSetupScreen(isSetup: isSetup),
+                );
+              },
+            ),
+            GoRoute(
+              path: pinChange,
+              builder: (context, state) => BlocProvider(
+                create: (_) => sl<WalletBloc>(),
+                child: const PinChangeScreen(),
+              ),
+            ),
+            GoRoute(
+              path: pinReset,
+              builder: (context, state) => BlocProvider(
+                create: (_) => sl<WalletBloc>(),
+                child: const PinResetScreen(),
+              ),
+            ),
+            GoRoute(
+              path: '/wallet/transaction/:id',
+              builder: (context, state) {
+                final id = state.pathParameters['id'] ?? '';
+                return BlocProvider(
+                  create: (_) => sl<WalletBloc>(),
+                  child: TransactionDetailScreen(transactionId: id),
+                );
+              },
+            ),
           ],
         ),
       ],
       errorBuilder: (context, state) => Scaffold(
         body: Center(
-          child: Text('Page not found: ${state.matchedLocation}'),
+          child: Text('Không tìm thấy trang: ${state.matchedLocation}'),
         ),
       ),
     );

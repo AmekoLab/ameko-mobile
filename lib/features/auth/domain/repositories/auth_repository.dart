@@ -9,26 +9,52 @@ abstract class AuthRepository {
   });
 
   Future<Either<Failure, UserEntity>> register({
-    required String name,
+    required String username,
     required String email,
     required String password,
+    required String firstName,
+    required String lastName,
   });
 
-  Future<Either<Failure, String>> forgotPassword({required String email});
+  Future<Either<Failure, void>> sendActivationCode(String email);
 
-  Future<Either<Failure, String>> resetPassword({
+  Future<Either<Failure, void>> verifyOtp({
+    required String email,
+    required String code,
+  });
+
+  Future<Either<Failure, void>> forgotPassword({required String email});
+
+  Future<Either<Failure, void>> resetPassword({
     required String email,
     required String code,
     required String newPassword,
     required String confirmPassword,
   });
 
-  Future<Either<Failure, void>> verifyOtp({required String otp});
-
   Future<Either<Failure, String>> logout();
 
   Future<Either<Failure, UserEntity>> getProfile({
     required String id,
-    required String token,
+  });
+
+  Future<Either<Failure, UserEntity>> updateProfile({
+    required String userId,
+    String? firstName,
+    String? lastName,
+    int? gender,
+    String? dateOfBirth,
+    String? phoneNumber,
+    String? image,
+    String? storeAddress,
+    String? storeDescription,
+    String? banner,
+  });
+
+  Future<Either<Failure, void>> changePassword({
+    required String userId,
+    required String oldPassword,
+    required String newPassword,
+    required String confirmNewPassword,
   });
 }

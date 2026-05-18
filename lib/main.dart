@@ -1,14 +1,23 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'l10n/app_localizations.dart';
+import 'package:ameko_app/core/network/dev_http_overrides.dart';
 import 'package:ameko_app/core/router/app_router.dart';
 import 'package:ameko_app/core/theme/app_theme.dart';
 import 'package:ameko_app/core/utils/app_bloc_observer.dart';
 import 'package:ameko_app/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:ameko_app/core/bloc/locale_bloc.dart';
 import 'package:ameko_app/injection_container.dart';
+import 'package:ameko_app/features/payment/presentation/services/payment_link_handler.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Bypass SSL for local development (HTTPS 10.0.2.2)
+  HttpOverrides.global = DevHttpOverrides();
 
   // Load environment variables
   await dotenv.load(fileName: '.env');
@@ -27,8 +36,11 @@ class AmekoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => sl<AuthBloc>(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => sl<AuthBloc>()),
+        BlocProvider(create: (_) => sl<LocaleBloc>()..add(LoadLocale())),
+      ],
       child: const _RouterWrapper(),
     );
   }
@@ -43,14 +55,40 @@ class _RouterWrapper extends StatefulWidget {
 
 class _RouterWrapperState extends State<_RouterWrapper> {
   late final router = AppRouter.createRouter(context);
+  late final PaymentLinkHandler _linkHandler;
+
+  @override
+  void initState() {
+    super.initState();
+    _linkHandler = PaymentLinkHandler(router);
+    _linkHandler.init();
+  }
+
+  @override
+  void dispose() {
+    _linkHandler.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'Ameko',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      routerConfig: router,
+    return BlocBuilder<LocaleBloc, LocaleState>(
+      builder: (context, state) {
+        return MaterialApp.router(
+          title: 'Ameko',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light,
+          routerConfig: router,
+          locale: state.locale,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+        );
+      },
     );
   }
 }

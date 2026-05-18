@@ -63,3 +63,20 @@ class ReactToMessage extends ChatDetailEvent {
   @override
   List<Object?> get props => [conversationId, messageId, reaction];
 }
+/// Fired when an external reaction change arrives from SignalR.
+class MessageReactionReceived extends ChatDetailEvent {
+  final String messageId;
+  final int? reaction;
+  const MessageReactionReceived({required this.messageId, this.reaction});
+  @override
+  List<Object?> get props => [messageId, reaction];
+}
+
+/// Fired when an external read receipt arrives from SignalR.
+class ReadReceiptReceived extends ChatDetailEvent {
+  final String userId;
+  final int upToMessageId;
+  const ReadReceiptReceived({required this.userId, required this.upToMessageId});
+  @override
+  List<Object?> get props => [userId, upToMessageId];
+}

@@ -23,43 +23,14 @@ class LoginRequested extends AuthEvent {
   List<Object?> get props => [email, password];
 }
 
-/// Fired when user submits the registration form.
-class RegisterRequested extends AuthEvent {
-  final String name;
-  final String email;
-  final String password;
-
-  const RegisterRequested({
-    required this.name,
-    required this.email,
-    required this.password,
-  });
-
-  @override
-  List<Object?> get props => [name, email, password];
-}
-
-/// Fired when user requests a password reset.
 class ForgotPasswordRequested extends AuthEvent {
   final String email;
-
   const ForgotPasswordRequested({required this.email});
 
   @override
   List<Object?> get props => [email];
 }
 
-/// Fired when user submits OTP code.
-class VerifyOtpRequested extends AuthEvent {
-  final String otp;
-
-  const VerifyOtpRequested({required this.otp});
-
-  @override
-  List<Object?> get props => [otp];
-}
-
-/// Fired when user submits reset password form.
 class ResetPasswordRequested extends AuthEvent {
   final String email;
   final String code;
@@ -77,12 +48,100 @@ class ResetPasswordRequested extends AuthEvent {
   List<Object?> get props => [email, code, newPassword, confirmPassword];
 }
 
-/// Fired when user logs out.
+/// Fired when user submits the registration form.
+class RegisterRequested extends AuthEvent {
+  final String username;
+  final String email;
+  final String password;
+  final String firstName;
+  final String lastName;
+
+  const RegisterRequested({
+    required this.username,
+    required this.email,
+    required this.password,
+    required this.firstName,
+    required this.lastName,
+  });
+
+  @override
+  List<Object?> get props => [username, email, password, firstName, lastName];
+}
+
+class SendOtpRequested extends AuthEvent {
+  final String email;
+  const SendOtpRequested({required this.email});
+
+  @override
+  List<Object?> get props => [email];
+}
+
+class VerifyOtpRequested extends AuthEvent {
+  final String email;
+  final String code;
+
+  const VerifyOtpRequested({required this.email, required this.code});
+
+  @override
+  List<Object?> get props => [email, code];
+}
+
+class UpdateProfileRequested extends AuthEvent {
+  final String? firstName;
+  final String? lastName;
+  final int? gender;
+  final String? dateOfBirth;
+  final String? phoneNumber;
+  final String? image;
+  final String? storeAddress;
+  final String? storeDescription;
+  final String? banner;
+
+  const UpdateProfileRequested({
+    this.firstName,
+    this.lastName,
+    this.gender,
+    this.dateOfBirth,
+    this.phoneNumber,
+    this.image,
+    this.storeAddress,
+    this.storeDescription,
+    this.banner,
+  });
+
+  @override
+  List<Object?> get props => [
+        firstName,
+        lastName,
+        gender,
+        dateOfBirth,
+        phoneNumber,
+        image,
+        storeAddress,
+        storeDescription,
+        banner,
+      ];
+}
+
+class ChangePasswordRequested extends AuthEvent {
+  final String oldPassword;
+  final String newPassword;
+  final String confirmNewPassword;
+
+  const ChangePasswordRequested({
+    required this.oldPassword,
+    required this.newPassword,
+    required this.confirmNewPassword,
+  });
+
+  @override
+  List<Object?> get props => [oldPassword, newPassword, confirmNewPassword];
+}
+
 class LoggedOut extends AuthEvent {
   const LoggedOut();
 }
 
-/// Fired to refresh user data from API.
 class ProfileFetchRequested extends AuthEvent {
   const ProfileFetchRequested();
 }

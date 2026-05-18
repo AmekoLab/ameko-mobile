@@ -1,13 +1,13 @@
 import 'package:ameko_app/features/chat/domain/entities/chat_entity.dart';
 
 abstract class ChatRepository {
-  Future<({List<ConversationEntity> items, int? nextCursor, bool hasMore})>
-      getConversations({int cursor = 1, int pageSize = 20});
+  Future<({List<ConversationEntity> items, String? nextCursor, bool hasMore})>
+      getConversations({String? cursor, int pageSize = 20});
 
-  Future<({List<MessageEntity> items, int? nextCursor, bool hasMore})>
+  Future<({List<MessageEntity> items, String? nextCursor, bool hasMore})>
       getMessages({
     required String conversationId,
-    int cursor = 1,
+    String? cursor,
     int pageSize = 10,
   });
 

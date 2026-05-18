@@ -71,10 +71,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   const AppLogo(size: 72),
                   AppSpacing.v24,
-                  Text('Sign In', style: AppTextStyles.heading),
+                  Text('Đăng nhập', style: AppTextStyles.heading),
                   AppSpacing.v8,
                   Text(
-                    'Welcome back! Please login to continue.',
+                    'Chào mừng trở lại! Vui lòng đăng nhập để tiếp tục.',
                     style: AppTextStyles.bodySecondary,
                     textAlign: TextAlign.center,
                   ),
@@ -97,7 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   AppSpacing.v16,
                   AppTextField(
                     name: 'password',
-                    hint: 'Password',
+                    hint: 'Mật khẩu',
                     isPassword: true,
                     focusNode: _passwordFocus,
                     textInputAction: TextInputAction.done,
@@ -120,14 +120,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                       child: Text(
-                        'Forgot Password?',
+                        'Quên mật khẩu?',
                         style: AppTextStyles.link,
                       ),
                     ),
                   ),
                   AppSpacing.v24,
                   AppButton(
-                    text: 'Sign In',
+                    text: 'Đăng nhập',
                     onPressed: () => _submit(context),
                     isLoading: isLoading,
                     enabled: !isLoading,
@@ -137,13 +137,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        "Don't have an account? ",
+                        "Chưa có tài khoản? ",
                         style: AppTextStyles.bodySecondary,
                       ),
                       GestureDetector(
                         onTap: () => context.go(AppRouter.register),
                         child: Text(
-                          'Sign Up',
+                          'Đăng ký',
                           style: AppTextStyles.link.copyWith(
                             fontWeight: FontWeight.w600,
                           ),

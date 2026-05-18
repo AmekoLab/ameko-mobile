@@ -61,6 +61,9 @@ class StorageService {
     await _prefs.remove(_userKey);
   }
 
+  String? getString(String key) => _prefs.getString(key);
+  Future<void> setString(String key, String value) => _prefs.setString(key, value);
+
   // ─── Full Logout ─────────────────────────────────────────────────────────────
 
   Future<void> clearAll() async {

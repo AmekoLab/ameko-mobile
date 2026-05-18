@@ -1,0 +1,21 @@
+{
+  "@@locale": "en",
+  "appTitle": "Ameko",
+  "hello": "Hello",
+  "searchHint": "Search keyboards...",
+  "home": "Home",
+  "chat": "Chat",
+  "orders": "Orders",
+  "profile": "Profile",
+  "language": "Language",
+  "settings": "Settings",
+  "signOut": "Sign Out",
+  "selectLanguage": "Select Language",
+  "vietnamese": "Vietnamese",
+  "english": "English",
+  "categories": "Categories",
+  "featuredProducts": "Featured Products",
+  "seeAll": "See all",
+  "exploreNow": "Explore now",
+  "discoverKeyboards": "Discover Custom Keyboards"
+}

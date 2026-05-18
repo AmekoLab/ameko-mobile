@@ -47,19 +47,37 @@ dependencies:
   flutter_svg: ^2.0.12
   google_fonts: ^6.3.2
 
+  # WebView (for VNPAY payment flow)
+  flutter_inappwebview: ^6.1.5
+
   # SignalR
   signalr_netcore: ^1.3.7
 
   # Navigation
   go_router: ^14.6.3
+  intl: ^0.20.2
+  flutter_localizations:
+    sdk: flutter
+
+  # Deep Links & URL Launching
+  url_launcher: ^6.3.1
+  app_links: ^6.3.2
+  rxdart: ^0.28.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/AmekoLab.png"
 
 flutter:
   uses-material-design: true
+  generate: true
 
   assets:
     - .env

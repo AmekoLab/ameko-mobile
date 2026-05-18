@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:ameko_app/core/services/storage_service.dart';
@@ -10,7 +11,7 @@ class DioClient {
   DioClient(StorageService storageService)
       : _dio = Dio(
           BaseOptions(
-            baseUrl: dotenv.env['BASE_URL'] ?? 'https://localhost:5001/',
+            baseUrl: dotenv.env['BASE_URL'] ?? 'https://10.0.2.2:5001/',
             connectTimeout: const Duration(seconds: 15),
             sendTimeout: const Duration(seconds: 15),
             receiveTimeout: const Duration(seconds: 30),
@@ -41,6 +42,9 @@ class DioInterceptor extends Interceptor {
     final token = await _storageService.getToken();
     if (token != null && token.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $token';
+      appLogger.d('Auth Token attached: ${token.substring(0, min(token.length, 10))}...');
+    } else {
+      appLogger.w('No Auth Token found in storage');
     }
     appLogger.d(
       '→ ${options.method} ${options.uri}\n'

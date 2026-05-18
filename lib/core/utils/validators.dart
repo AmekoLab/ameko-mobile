@@ -4,77 +4,74 @@ class AppValidators {
 
   static String? validatePhone(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Phone number is required';
+      return 'Vui lòng nhập số điện thoại';
     }
     final cleaned = value.replaceAll(RegExp(r'[\s\-\+\(\)]'), '');
     if (cleaned.length < 8 || cleaned.length > 15) {
-      return 'Enter a valid phone number';
+      return 'Số điện thoại không hợp lệ';
     }
     if (!RegExp(r'^\d+$').hasMatch(cleaned)) {
-      return 'Phone number must contain only digits';
+      return 'Số điện thoại chỉ được chứa chữ số';
     }
     return null;
   }
 
   static String? validatePassword(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Password is required';
-    }
-    if (value.length < 6) {
-      return 'Password must be at least 6 characters';
+      return 'Vui lòng nhập mật khẩu';
     }
     return null;
   }
 
   static String? validateEmail(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Email is required';
+      return 'Vui lòng nhập email';
     }
     final emailRegex = RegExp(
       r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$',
     );
     if (!emailRegex.hasMatch(value.trim())) {
-      return 'Enter a valid email address';
+      return 'Email không hợp lệ';
     }
     return null;
   }
 
   static String? validateName(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Name is required';
+      return 'Vui lòng nhập tên';
     }
     if (value.trim().length < 2) {
-      return 'Name must be at least 2 characters';
+      return 'Tên phải có ít nhất 2 ký tự';
     }
     return null;
   }
 
   static String? validateOtp(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'OTP is required';
+      return 'Vui lòng nhập mã OTP';
     }
     if (value.length < 4 || value.length > 6) {
-      return 'Enter a valid OTP';
+      return 'Mã OTP không hợp lệ';
     }
     if (!RegExp(r'^\d+$').hasMatch(value)) {
-      return 'OTP must contain only digits';
+      return 'Mã OTP chỉ được chứa chữ số';
     }
     return null;
   }
 
-  static String? validateRequired(String? value, {String label = 'This field'}) {
+  static String? validateRequired(String? value, {String label = 'Trường này'}) {
     if (value == null || value.trim().isEmpty) {
-      return '$label is required';
+      return '$label là bắt buộc';
     }
     return null;
   }
 
   static String? validateConfirmPassword(String? value, String? password) {
     if (value == null || value.isEmpty) {
-      return 'Please confirm your password';
+      return 'Vui lòng xác nhận mật khẩu';
     }
     if (value != password) {
-      return 'Passwords do not match';
+      return 'Mật khẩu không khớp';
     }
     return null;
   }

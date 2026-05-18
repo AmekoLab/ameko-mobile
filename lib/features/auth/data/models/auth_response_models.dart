@@ -44,13 +44,13 @@ class LoginDataModel {
 
   factory LoginDataModel.fromJson(Map<String, dynamic> json) {
     return LoginDataModel(
-      id: json['id'] as String? ?? '',
+      id: (json['id'] ?? json['userId'] ?? json['sub'] ?? '').toString(),
       username: json['username'] as String? ?? '',
       email: json['email'] as String? ?? '',
       fullName: json['fullName'] as String?,
       role: json['role'] as String? ?? '',
-      token: json['token'] as String? ?? '',
-      refreshToken: json['refreshToken'] as String? ?? '',
+      token: (json['token'] ?? json['accessToken'] ?? json['idToken'] ?? '').toString(),
+      refreshToken: (json['refreshToken'] ?? json['refresh_token'] ?? '').toString(),
     );
   }
 

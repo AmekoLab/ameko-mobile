@@ -11,6 +11,7 @@ import 'package:ameko_app/features/chat/presentation/bloc/chat_detail_state.dart
 import 'package:ameko_app/features/chat/presentation/bloc/chat_list_bloc.dart';
 import 'package:ameko_app/features/chat/presentation/bloc/chat_list_event.dart';
 import 'package:ameko_app/features/chat/presentation/bloc/chat_list_state.dart';
+import 'package:ameko_app/core/services/storage_service.dart';
 import 'package:ameko_app/injection_container.dart';
 
 class ChatDetailScreen extends StatefulWidget {
@@ -25,10 +26,14 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final _inputCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
   late ChatDetailBloc _bloc;
+  String _currentUserId = '';
 
   @override
   void initState() {
     super.initState();
+    final user = sl<StorageService>().getUser();
+    _currentUserId = user?['id'] ?? '';
+    
     _bloc = sl<ChatDetailBloc>()..add(FetchMessages(widget.chatId));
     context.read<ChatListBloc>().add(OptimisticMarkAsReadList(conversationId: widget.chatId));
     _scrollCtrl.addListener(_onScroll);
@@ -60,7 +65,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       conversationId: widget.chatId,
       content: text,
       tempId: '',
-      senderId: 'usr_001',
+      senderId: _currentUserId,
     ));
     _inputCtrl.clear();
     // Scroll to bottom (offset 0 in reverse list)
@@ -87,7 +92,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             appBar: AppBar(
               backgroundColor: AppColors.surface,
               elevation: 0,
-              leading: const BackButton(),
+              leading: const BackButton(color: AppColors.textPrimary),
               title: Row(
                 children: [
                   AppAvatarCircle(name: convo?.otherUserName ?? '?', radius: 18),
@@ -97,7 +102,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                     children: [
                       Text(convo?.otherUserName ?? 'Chat', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
                       Text(
-                        'Online',
+                        'Trực tuyến',
                         style: AppTextStyles.caption.copyWith(
                           color: AppColors.primary,
                           fontWeight: FontWeight.w500,
@@ -134,9 +139,13 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                               );
                             }
                             final msg = state.messages[i];
-                            // Using a placeholder check for "Me". In real app, compare with auth user id.
-                            final isMine = msg.senderId == 'usr_001' || msg.senderId == 'me';
-                            return _MessageBubble(message: msg, isMine: isMine);
+                            // Compare with real auth user id
+                            final isMine = msg.senderId == _currentUserId;
+                            return _MessageBubble(
+                              message: msg, 
+                              isMine: isMine, 
+                              otherUserName: convo?.otherUserName ?? '',
+                            );
                           },
                         );
                       },
@@ -154,24 +163,42 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 
   Widget _buildInputBar() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       decoration: BoxDecoration(
         color: AppColors.surface,
         border: Border(top: BorderSide(color: AppColors.divider.withValues(alpha: 0.1))),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -2)),
+        ],
       ),
       child: Row(
         children: [
+          // Grid/Apps button used as reload button
+          GestureDetector(
+            onTap: () => _bloc.add(FetchMessages(widget.chatId)),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.amazonBorder),
+                color: Colors.white,
+              ),
+              child: const Icon(Icons.grid_view_rounded, color: AppColors.amazonBtnPrimary, size: 20),
+            ),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: AppColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(24),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.amazonBorder),
               ),
               child: TextField(
                 controller: _inputCtrl,
                 style: AppTextStyles.body,
                 decoration: InputDecoration(
-                  hintText: 'Aa',
+                  hintText: 'Nhập tin nhắn...',
                   hintStyle: AppTextStyles.body.copyWith(color: AppColors.textHint),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   border: InputBorder.none,
@@ -180,10 +207,18 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 8),
-          IconButton(
-            icon: const Icon(Icons.send_rounded, color: AppColors.primary, size: 24),
-            onPressed: _sendMessage,
+          const SizedBox(width: 12),
+          // Send button in yellow circle
+          GestureDetector(
+            onTap: _sendMessage,
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.amazonBtnPrimary.withValues(alpha: 0.2), // Light yellow background
+              ),
+              child: const Icon(Icons.send_rounded, color: AppColors.amazonBtnPrimary, size: 22),
+            ),
           ),
         ],
       ),
@@ -192,68 +227,74 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
 }
 
 class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({required this.message, required this.isMine});
+  const _MessageBubble({
+    required this.message, 
+    required this.isMine, 
+    required this.otherUserName,
+  });
+  
   final MessageEntity message;
   final bool isMine;
+  final String otherUserName;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            if (!isMine) ...[
-              const CircleAvatar(radius: 14, backgroundColor: AppColors.surfaceVariant, child: Icon(Icons.person, size: 16, color: AppColors.textHint)),
-              const SizedBox(width: 8),
-            ],
-            Flexible(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  color: isMine ? AppColors.primary : AppColors.surfaceVariant,
-                  borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(20),
-                    topRight: const Radius.circular(20),
-                    bottomLeft: Radius.circular(isMine ? 20 : 4),
-                    bottomRight: Radius.circular(isMine ? 4 : 20),
-                  ),
-                ),
-                constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-                child: Text(
-                  message.content,
-                  style: AppTextStyles.body.copyWith(
-                    color: isMine ? Colors.white : AppColors.textPrimary,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        Padding(
-          padding: EdgeInsets.only(top: 4, bottom: 8, left: isMine ? 0 : 42, right: isMine ? 4 : 0),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Column(
+        crossAxisAlignment: isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                DateFormat('MMM d, h:mm a').format(message.createdAt),
-                style: AppTextStyles.caption.copyWith(color: AppColors.textHint, fontSize: 10),
-              ),
-              if (isMine) ...[
-                const SizedBox(width: 4),
-                if (message.status == MessageStatus.sending)
-                  const Icon(Icons.circle_outlined, size: 10, color: AppColors.textHint)
-                else if (message.status == MessageStatus.error)
-                  const Icon(Icons.error_outline, size: 12, color: Colors.red)
-                else
-                  const Icon(Icons.check_circle, size: 10, color: AppColors.primary),
+              if (!isMine) ...[
+                AppAvatarCircle(name: otherUserName, radius: 14),
+                const SizedBox(width: 8),
               ],
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isMine ? AppColors.amazonBtnPrimary : Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(16),
+                      topRight: const Radius.circular(16),
+                      bottomLeft: Radius.circular(isMine ? 16 : 4),
+                      bottomRight: Radius.circular(isMine ? 4 : 16),
+                    ),
+                    boxShadow: [
+                      if (!isMine)
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                    ],
+                    border: isMine ? null : Border.all(color: AppColors.amazonBorder.withValues(alpha: 0.5)),
+                  ),
+                  constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+                  child: Text(
+                    message.content,
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.amazonText,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
-        ),
-      ],
+          // Small timestamp under bubble
+          Padding(
+            padding: EdgeInsets.only(top: 4, left: isMine ? 0 : 40, right: isMine ? 12 : 0),
+            child: Text(
+              DateFormat('HH:mm').format(message.createdAt),
+              style: AppTextStyles.caption.copyWith(color: AppColors.textHint, fontSize: 10),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

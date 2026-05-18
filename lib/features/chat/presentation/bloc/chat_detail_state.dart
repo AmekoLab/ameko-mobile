@@ -7,7 +7,7 @@ class ChatDetailState extends Equatable {
   final List<MessageEntity> messages;
   final ChatDetailStatus status;
   final bool hasMore;
-  final int cursor;
+  final String? cursor;
   final String? conversationId;
   final String? error;
 
@@ -15,7 +15,7 @@ class ChatDetailState extends Equatable {
     this.messages = const [],
     this.status = ChatDetailStatus.initial,
     this.hasMore = true,
-    this.cursor = 1,
+    this.cursor,
     this.conversationId,
     this.error,
   });
@@ -24,7 +24,7 @@ class ChatDetailState extends Equatable {
     List<MessageEntity>? messages,
     ChatDetailStatus? status,
     bool? hasMore,
-    int? cursor,
+    String? cursor,
     String? conversationId,
     String? error,
   }) {

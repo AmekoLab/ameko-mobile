@@ -10,11 +10,14 @@ class ChatRepositoryImpl implements ChatRepository {
   ChatRepositoryImpl(this._dio);
 
   @override
-  Future<({List<ConversationEntity> items, int? nextCursor, bool hasMore})>
-      getConversations({int cursor = 1, int pageSize = 20}) async {
+  Future<({List<ConversationEntity> items, String? nextCursor, bool hasMore})>
+      getConversations({String? cursor, int pageSize = 20}) async {
+    final Map<String, dynamic> queryParams = {'pageSize': pageSize};
+    if (cursor != null) queryParams['cursor'] = cursor;
+
     final response = await _dio.get(
       '/api/v1/chat/conversations',
-      queryParameters: {'cursor': cursor, 'pageSize': pageSize},
+      queryParameters: queryParams,
     );
     final convoResponse = ConversationResponse.fromJson(response.data);
     return (
@@ -25,15 +28,18 @@ class ChatRepositoryImpl implements ChatRepository {
   }
 
   @override
-  Future<({List<MessageEntity> items, int? nextCursor, bool hasMore})>
+  Future<({List<MessageEntity> items, String? nextCursor, bool hasMore})>
       getMessages({
     required String conversationId,
-    int cursor = 1,
+    String? cursor,
     int pageSize = 10,
   }) async {
+    final Map<String, dynamic> queryParams = {'pageSize': pageSize};
+    if (cursor != null) queryParams['cursor'] = cursor;
+
     final response = await _dio.get(
       '/api/v1/chat/conversations/$conversationId/messages',
-      queryParameters: {'cursor': cursor, 'pageSize': pageSize},
+      queryParameters: queryParams,
     );
     final msgResponse = MessageResponse.fromJson(response.data);
     return (
